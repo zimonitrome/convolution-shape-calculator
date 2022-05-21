@@ -80,6 +80,7 @@ export function logCube({ draw, unitSize = 10, h = 6, w = 8, c = 3, cx = 0, cy =
         family: 'ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace', 
         size: 24,
     }
+
     let c_text = draw
         .text(`c = ${c}`)
         .font(fontSettings)

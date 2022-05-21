@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 
-export const [inputWidth, setInputWidth] = createSignal(16);
+export const [inputWidth, setInputWidth] = createSignal(16, {equals: false});
 export const [inputHeight, setInputHeight] = createSignal(16);
 export const [inputChannels, setinputChannels] = createSignal(3);
 
