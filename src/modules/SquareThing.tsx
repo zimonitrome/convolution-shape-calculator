@@ -1,14 +1,13 @@
-import * as SVG from 'svgjs';
+import { SVG } from '@svgdotjs/svg.js';
+import { makeGridPattern } from './svg-utils/patterns';
 
 export const SquareThing = (props) => {
     const mainElement = <div></div>;
 
     console.log(mainElement);
+    const draw = SVG().addTo(mainElement).size(300, 300);
+    const inputGridPattern = makeGridPattern(draw, ['#FCBF49'], "#003049", 10)
+    const rect = draw.rect(100, 100).attr({ fill: inputGridPattern });
 
-    setTimeout(()=>{
-        const draw = SVG(window.document.body).size(300, 300);
-        const rect = draw.rect(100, 100).attr({ fill: '#f06' });
-    }, 2000)
-
-    return <></>;
+    return mainElement;
 }
