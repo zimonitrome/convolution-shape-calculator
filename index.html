@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Convolution Shape Calculator</title>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <link rel="stylesheet" href="./style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
+    <script src="./main.js" charset="utf-8"></script>
+</head>
+
+<body>
+    <main>
+        <h1>Convolution Calculator</h1>
+        <!-- <div id="parameters"> -->
+
+            <!-- <div id="grid"></div> -->
+
+        <div id="input_parameters" class="container">
+            <h4>Input Shape</h4>
+            <div class="code">
+                input.shape = (
+                <div class="codeparam">
+                    <label><span class="codetip">batch_size: </span><output>1</output></label>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <!-- OBS! These sliders uses a log2 scale -->
+                    <label><span class="codetip">channels: </span><output for="channelsInput">?</output></label>
+                    <input id="channelsInput" type="range" min=0 max=10 step=0.0009765625 value=1.5859375 oninput="onRangeInput(this, 'pow2')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">height: </span><output for="heightInput">?</output></label>
+                    <input id="heightInput" type="range" min=0 max=10 step=0.0009765625 value=3 oninput="onRangeInput(this, 'pow2')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">width: </span><output for="widthInput">?</output></label>
+                    <input id="widthInput" type="range" min=0 max=10 step=0.0009765625 value=3 oninput="onRangeInput(this, 'pow2')"></input>
+                </div>
+                )
+            </div>
+            <div id="inputCanvas" class="canvas"></div>
+        </div>
+        <div class="arrow"></div>
+
+        <div id="conv2d_parameters" class="container">
+            <h4>Convolution Layer</h4>
+            <div class="code">
+                torch.nn.Conv2d(
+                <div class="codeparam">
+                    <label><span class="codetip">input_channels= </span><output for="channelsInput">?</output></label>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <!-- OBS! These sliders uses a log2 scale -->
+                    <label><span class="codetip">output_channels= </span><output for="outputChannelsInput">?</output></label>
+                    <input id="outputChannelsInput" type="range" min=0 max=10 step=0.0009765625 value=3.322265625 oninput="onRangeInput(this, 'pow2')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">kernel_size= </span><output for="kernalSizeInput">?</output></label>
+                    <input id="kernalSizeInput" type="range" min=1 max=15 step=1 value=3 oninput="onRangeInput(this,'linear')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">stride= </span><output for="strideInput">?</output></label>
+                    <input id="strideInput" type="range" min=1 max=15 step=1 value=2 oninput="onRangeInput(this,'linear')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">padding= </span><output for="paddingInput">?</output></label>
+                    <input id="paddingInput" type="range" min=0 max=15 step=1 value=0 oninput="onRangeInput(this,'linear')"></input>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">dilation= </span><output for="dilationInput">?</output></label>
+                    <input id="dilationInput" type="range" min=1 max=15 step=1 value=1 oninput="onRangeInput(this,'linear')"></input>
+                </div>
+                )
+            </div>
+        </div>
+        <div class="arrow"></div>
+
+        <div id="output" class="container">
+            <h4>Output Shape</h4>
+            <div class="code">
+                output.shape = (
+                <div class="codeparam">
+                    <label><span class="codetip">batch_size: </span><output>1</output></label>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">channels: </span><output for="outputChannelsInput">?</output></label>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">height: </span><output id="outputHeightOutput">?</output></label>
+                </div>,&nbsp
+                <div class="codeparam">
+                    <label><span class="codetip">width: </span><output id="outputWidthOutput">?</output></label>
+                </div>
+                )
+            </div>
+
+            <div id="outputCanvas" class="canvas"></div>
+        </div>
+
+
+    </main>
+</body>
+
+</html>
