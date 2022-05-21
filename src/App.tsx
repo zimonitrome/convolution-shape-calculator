@@ -4,6 +4,7 @@ import styles from './index.css';
 
 import InputControls from './modules/InputControls';
 import FilterControls from './modules/FilterControls';
+import { Container } from './modules/Container';
 
 const App: Component = () => {
   return (
@@ -12,8 +13,10 @@ const App: Component = () => {
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
-        <InputControls/>
-        <FilterControls/>
+        <Container>
+          <InputControls/>
+          <FilterControls/>
+        </Container>
       </header>
     </div>
   );
