@@ -5,6 +5,9 @@ import styles from './App.module.css';
 import { Container } from './modules/Container';
 import { SquareThing } from './modules/SquareThing';
 
+import InputControls from './modules/InputControls';
+import FilterControls from './modules/FilterControls';
+
 const App: Component = () => {
   return (
     <div class={styles.App}>
@@ -12,17 +15,11 @@ const App: Component = () => {
         {/* <img src={logo} class={styles.logo} alt="logo" /> */}
         <Container>hejsan</Container>
         <SquareThing/>
-        {/* <p>
+        <p>
           Edit <code>src/App.tsx</code> and save to reload.
         </p>
-        <a
-          class={styles.link}
-          href="https://github.com/solidjs/solid"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn Solid
-        </a> */}
+        <InputControls/>
+        <FilterControls/>
       </header>
     </div>
   );
