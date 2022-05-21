@@ -1,10 +1,8 @@
-import { JSX } from "solid-js";
-export const Container = (props:any) => {
-    const style: JSX.CSSProperties = {
-    };
-
-    return <div style={style}>
-            abc
-        </div>;
-    
-}
+export const Container = (props) => <div style={{
+    "border": "1px solid #888",
+    "border-radius": "0.75ch",
+    "padding": "15px"
+}}
+>
+    {props.children}
+</div>;
