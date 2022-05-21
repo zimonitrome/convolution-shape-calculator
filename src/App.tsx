@@ -10,16 +10,13 @@ import { SquareThing } from './modules/SquareThing';
 const App: Component = () => {
   return (
     <div class="App">
-      <header class="header">
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <Container>
-          <InputControls/>
-          <FilterControls/>
-          <SquareThing/>
-        </Container>
-      </header>
+      {/* <header class="header">
+      </header> */}
+      <Container>
+        <InputControls/>
+        {/* <FilterControls/> */}
+        <SquareThing/>
+      </Container>
     </div>
   );
 };
