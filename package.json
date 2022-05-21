@@ -15,6 +15,8 @@
     "vite-plugin-solid": "^2.2.6"
   },
   "dependencies": {
-    "solid-js": "^1.4.2"
+    "@svgdotjs/svg.js": "^3.1.2",
+    "solid-js": "^1.4.2",
+    "svgdom": "^0.1.10"
   }
 }
