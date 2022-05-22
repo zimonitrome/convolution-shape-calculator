@@ -1,22 +1,17 @@
 import type { Component } from 'solid-js';
-
-import styles from './index.css';
-
-import InputControls, { inputChannels, inputHeight, inputWidth } from './modules/InputControls';
-import FilterControls from './modules/FilterControls';
-import { Container } from './modules/Container';
-import { SquareThing } from './modules/SquareThing';
+import Conv2d from './modules/Conv2d';
+import DownArrow from './modules/DownArrow';
+import InputShape from './modules/InputShape';
+import OutputShape from './modules/OutputShape';
 
 const App: Component = () => {
   return (
     <div class="App">
-      {/* <header class="header">
-      </header> */}
-      <Container>
-        <InputControls/>
-        {/* <FilterControls/> */}
-        <SquareThing/>
-      </Container>
+      <InputShape/>
+      <DownArrow height={50} width={60}/>
+      <Conv2d/>
+      <DownArrow height={50} width={60}/>
+      <OutputShape/>
     </div>
   );
 };
