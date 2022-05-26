@@ -24,5 +24,6 @@ export default (props: any) => {
             <CodeParam text="dilation" min={1} max={15} scaling="linear" signal={[dilation, setDilation]} />
             )
         </CodeParamGroup>
+        <div style={{ "min-width": "550px", "min-height": "400px" }} />
     </Container>
 }
