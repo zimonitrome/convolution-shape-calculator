@@ -1,4 +1,4 @@
-import { createSignal, onMount } from "solid-js";
+import { createEffect, createSignal, onMount } from "solid-js";
 import CodeParam from "./CodeParam";
 import CodeParamGroup from "./CodeParamGroup";
 import Container from "./Container";
@@ -10,12 +10,17 @@ export const [inputChannels, setinputChannels] = createSignal(3);
 
 export default (props: any) => {
     onMount(() => {
-        const app = document.getElementById("App")!;
-        const long = document.getElementById("long")!;
-
+        
+        const root = document.getElementById("root")!;
+        
         new ResizeObserver(() => {
+            const app = document.getElementById("App")!;
+            const long = document.getElementById("long")!;
             long.style.height = `${app.clientHeight}px`;
-        }).observe(app);
+        }).observe(root);
+        // createEffect(() => {
+
+        // });
         // setTimeout(() => {
         //     document.getElementById("long")!.style.height = `${document.getElementById("App")?.clientHeight}px`;
 
@@ -33,7 +38,7 @@ export default (props: any) => {
         </CodeParamGroup>
         {/* </div> */}
         <div style={{ "min-width": "550px", "min-height": "400px"}}>
-            <div id="long" style={{ "position": "absolute", "min-width": "550px", "outline": "2px solid blue"}}>
+            <div id="long" style={{ "position": "absolute", "min-width": "550px", /*"background-color": "lightblue"*/ /*"border": "1px solid blue"*/}}>
                 <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} />
                 {/* <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} /> */}
             </div>

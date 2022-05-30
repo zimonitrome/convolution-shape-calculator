@@ -4,7 +4,9 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { ObjectControls } from 'threeJS-object-controls';
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
 import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { PlaneGeometry } from 'three';
+import { MeshPhongMaterial, MeshStandardMaterial, PlaneGeometry } from 'three';
+import { outputWidth, outputHeight } from './OutputShape';
+import { dilation, kernelSize, outputChannels, padding, stride } from './Conv2d';
 
 interface SvgCubeProps {
     channels: number;
@@ -57,28 +59,6 @@ function getTextSprite(text: string, position: [number, number, number], fontsiz
     return sprite;
 }
 
-function canvas2DToWorld3D_(canvasX: number, canvasY: number, camera: THREE.Camera, canvas: HTMLCanvasElement) {
-    // get x,y coords into canvas where click occurred
-    var rect = canvas.getBoundingClientRect();
-    var x = canvasX - rect.left;
-    var y = canvasY - rect.top;
-    // convert x,y to clip space; coords from top left, clockwise:
-    // (-1,1), (1,1), (-1,-1), (1, -1)
-    var mouse = new THREE.Vector3();
-    mouse.x = ((x / canvas.clientWidth) * 2) - 1;
-    mouse.y = (-(y / canvas.clientHeight) * 2) + 1;
-    mouse.z = 0.5; // set to z position of mesh objects
-    // reverse projection from 3D to screen
-    mouse.unproject(camera);
-    // convert from point to a direction
-    mouse.sub(camera.position).normalize();
-    // scale the projected ray
-    var distance = -camera.position.z / mouse.z,
-        scaled = mouse.multiplyScalar(distance),
-        coords = camera.position.clone().add(scaled);
-    return coords;
-}
-
 function canvas2DToWorld3D(canvasX: number, canvasY: number, camera: THREE.Camera, canvas: HTMLCanvasElement, scene: THREE.Scene) {
     let vector = new THREE.Vector3();
     console.log(canvas.width);
@@ -89,38 +69,6 @@ function canvas2DToWorld3D(canvasX: number, canvasY: number, camera: THREE.Camer
         0
     );
     return vector.unproject(camera);
-
-
-    // // var plane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 1));
-    // var plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.position.clone(), new THREE.Vector3(0,0,0));
-    // // var plane = new THREE.Plane().setFromCoplanarPoints(new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 1, 0), new THREE.Vector3(3, 2, 0));
-
-    // scene.add(new THREE.PlaneHelper( plane, 1, 0xffff00 ));
-
-
-    // const material = new THREE.LineBasicMaterial({
-    //     color: 0x0000ff
-    // });
-    // const points = [];
-    // points.push( camera.position.clone() );
-    // points.push( new THREE.Vector3(0,0,0) );
-    // const geometry = new THREE.BufferGeometry().setFromPoints( points );
-    // const line = new THREE.Line( geometry, material );
-    // scene.add( line );
-
-
-
-    // var raycaster = new THREE.Raycaster();
-    // var corner = new THREE.Vector2();
-    // var cornerPoint = new THREE.Vector3();
-
-    // corner.set(-1,0); // NDC of the bottom-left corner
-    // raycaster.setFromCamera(corner, camera.clone());
-    // raycaster.ray.intersectPlane(plane, cornerPoint);
-
-    // console.log(raycaster)
-
-    // return cornerPoint;
 }
 
 function getCube(w: number, h: number, c: number, colors: Array<string>, borderColor: string) {
@@ -251,24 +199,65 @@ function getCube(w: number, h: number, c: number, colors: Array<string>, borderC
     return group
 }
 
+function getConv2d(inputChannels: number, outputChannels: number, kernelSize:number, stride: number, padding:number, dilation:number) {
+    const group = new THREE.Group();
+
+    var geometry = new THREE.CylinderGeometry( 1 / Math.sqrt( 2 ), 0.7 / Math.sqrt( 2 ), 1, 4, 1 ); // size of top can be changed
+    geometry.rotateY( Math.PI / 4 );
+    geometry = geometry.toNonIndexed(); // removes shared vertices
+    geometry.computeVertexNormals(); // normals will be 'flat' normals
+    let mesh = new THREE.Mesh( geometry, new MeshStandardMaterial({color:0xff0000, opacity: 0.6, transparent: true, side: THREE.BackSide}) );
+    // mesh.scale.set( 1.5, 1, 1 );
+    mesh.scale.multiply(new THREE.Vector3(1, 1, 1.5));
+    mesh.renderOrder = -1;
+    group.add(mesh);
+
+    
+    let cube = getCube(kernelSize,kernelSize,outputChannels, ["#E22030", "#00AEAC", "#136371", "#F2B995"], "#1E3A4B");
+    cube.scale.multiplyScalar(0.7);
+    cube.renderOrder = 1;
+    group.add(cube);
+
+
+    return group
+    
+}
+
 export const Cube3D = (inProps: SvgCubeProps) => {
     const props = mergeProps({ colors: ['#FCBF49'], borderColor: "#003049" }, inProps)
 
     let elem: HTMLDivElement | undefined = undefined;
 
     onMount(() => {
+
+        elem = elem!
         const width = 550;
-        const height = 1000;
+        const height = 1367;
         const aspect = width / height;
         const scene = new THREE.Scene();
         var d = 1;
-        const camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100000);
+        let camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100000);
         // const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 100000);
 
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: true
         });
+        const updateCanvas = () => {
+            let width = elem.parentElement!.clientWidth;
+            let height = elem.parentElement!.clientHeight;
+            let aspect = width / height;
+            
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+            camera.updateProjectionMatrix();
+            // camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 100000);
+        
+            renderer.setSize( width, height );
+        }
+        window.addEventListener("resize", updateCanvas, false);
 
         renderer.setClearColor(0x000000, 0);
 
@@ -283,7 +272,7 @@ export const Cube3D = (inProps: SvgCubeProps) => {
 
 
 
-        let cube = getCube(1, 1, 1, props.colors, props.borderColor);
+        let inputCube = getCube(1, 1, 1, props.colors, props.borderColor);
         // cube.position.set(pos.x, pos.y, 0)
         // cube.cen
         // new THREE.Box3().setFromObject( cube ).ce
@@ -293,12 +282,19 @@ export const Cube3D = (inProps: SvgCubeProps) => {
         // pivot.add(cube);
         // pivot.position.set(pos.x, pos.y, 0)
         // scene.add(pivot);
+        scene.add(inputCube);
 
 
+        let conv = getConv2d(1,1,1,1,1,1);
+        console.log("conv")
+        console.log(conv)
+        conv.scale.multiplyScalar(.3)
+        // conv.position.set(0,0,0)
+        scene.add(conv);
 
-        scene.add(cube);
-
-        // let cube2 = getCube(1, 1, 1, props.colors, props.borderColor);
+        
+        let outputCube = getCube(1, 1, 1, props.colors, props.borderColor);
+        scene.add(outputCube);
         // // cube2.position.set(0, -1, 0)
         // scene.add(cube2);
 
@@ -335,7 +331,11 @@ export const Cube3D = (inProps: SvgCubeProps) => {
             mouseX = evt.clientX;
             mouseY = evt.clientY;
 
-            rotateAboutPoint(cube, cube.position.clone(), new THREE.Vector3(0, 1, 0), toRadians(deltaX), false)
+            rotateAboutPoint(inputCube, inputCube.position.clone(), new THREE.Vector3(0, 1, 0), toRadians(deltaX), false)
+            rotateAboutPoint(inputCube, inputCube.position.clone(), new THREE.Vector3(1, 0, 0), toRadians(deltaY), false)
+
+            conv.rotation.set(inputCube.rotation.x, inputCube.rotation.y, inputCube.rotation.z)
+            outputCube.rotation.set(inputCube.rotation.x, inputCube.rotation.y, inputCube.rotation.z)
 
         }, false);
 
@@ -350,7 +350,7 @@ export const Cube3D = (inProps: SvgCubeProps) => {
             mouseDown = false;
         });
 
-        console.log(cube)
+        console.log(inputCube)
 
 
 
@@ -374,8 +374,8 @@ export const Cube3D = (inProps: SvgCubeProps) => {
 
 
 
-        var bbox = new THREE.Box3().setFromObject(cube);
-        let pos = canvas2DToWorld3D(canvas.width / 2, 400/2, camera, canvas, scene);
+        var bbox = new THREE.Box3().setFromObject(inputCube);
+        
         
         // scene.add(new THREE.PlaneHelper( new THREE.Plane().setFromNormalAndCoplanarPoint(camera.position, new THREE.Vector3(0,0,0)), 1, 0xffff00 ));
         // console.log(pos)
@@ -384,22 +384,62 @@ export const Cube3D = (inProps: SvgCubeProps) => {
         // scene.add(sphere)
 
         createEffect(() => {
+            updateCanvas();
+
             // Only render if reasonable input values
             if ([props.width, props.height, props.channels].some(val => !val)) {
-                cube.visible = false;
+                inputCube.visible = false;
                 return;
             }
             else {
-                cube.visible = true;
+                inputCube.visible = true;
+                // Update inputCube
+                let newInputCube = getCube(props.width, props.height, props.channels, props.colors, props.borderColor)
+                inputCube.remove(...inputCube.children);
+                inputCube.add(...newInputCube.children);
+                let pos = canvas2DToWorld3D(canvas.width / 2, 400/2, camera, canvas, scene);
+                inputCube.position.set(pos.x, pos.y, pos.z);
+                inputCube.scale.set(0.3, 0.3, 0.3)
+            }
+
+            
+            // Only render if reasonable input values
+            if ([props.channels, outputChannels(), kernelSize(), stride()].some(val => !val)) {
+                conv.visible = false;
+                return;
+            }
+            else {
+                conv.visible = true;
+                // Update conv
+                let newconv = getConv2d(props.channels, outputChannels(), kernelSize(), stride(), padding(), dilation());
+                console.log("conv.children");
+                console.log(conv.children);
+                conv.remove(...conv.children);
+                conv.add(...newconv.children);
+                let pos = canvas2DToWorld3D(canvas.width / 2, 400 + 80 + 400/2, camera, canvas, scene);
+                conv.position.set(pos.x, pos.y, pos.z);
+                // conv.scale.set(0.3, 0.3, 0.3)
             }
 
 
-
-            let newcube = getCube(props.width, props.height, props.channels, props.colors, props.borderColor)
-            cube.remove(...cube.children);
-            cube.add(...newcube.children);
-            cube.position.set(pos.x, pos.y, pos.z);
-            cube.scale.set(0.4, 0.4, 0.4)
+            console.log("AAAAAAAAAA")
+            console.log(outputWidth(), outputHeight(), outputChannels())
+            // Only render if reasonable input values
+            if ([outputWidth(), outputHeight(), outputChannels()].some(val => !val)) {
+                outputCube.visible = false;
+                return;
+            }
+            else {
+                outputCube.visible = true;
+                let newOutputCube = getCube(outputWidth(), outputHeight(), outputChannels(), ['#aaaacc', '#6677aa', '#ccddff', '#445577'], "#223344")
+                outputCube.remove(...outputCube.children);
+                outputCube.add(...newOutputCube.children);
+                let pos = canvas2DToWorld3D(canvas.width / 2, 400 + 80 + 400 + 80 + 400/2, camera, canvas, scene);
+                outputCube.position.set(pos.x, pos.y, pos.z);
+                outputCube.scale.set(0.3, 0.3, 0.3)
+            }
+            
+            
 
         });
     })
