@@ -35,7 +35,7 @@ export default (props: any) => {
         <div style={{ "min-width": "550px", "min-height": "400px"}}>
             <div id="long" style={{ "position": "absolute", "min-width": "550px", "outline": "2px solid blue"}}>
                 <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} />
-                <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} />
+                {/* <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} /> */}
             </div>
         </div>
         {/* <Cube3D channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} /> */}
