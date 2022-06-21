@@ -75,21 +75,24 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             mouseX = 0,
             mouseY = 0;
 
-        document.addEventListener('pointermove', e => {
+        function move(e: Event, x: number, y: number) {
             // Rotation
             if (!mouseDown) { return }
             e.preventDefault();
-            var deltaX = e.clientX - mouseX,
-                deltaY = e.clientY - mouseY;
-            mouseX = e.clientX;
-            mouseY = e.clientY;
+            var deltaX = x - mouseX,
+                deltaY = y - mouseY;
+            mouseX = x;
+            mouseY = y;
 
             inputCube.rotation.y = inputCube.rotation.y + toRadians(deltaX);
             inputCube.rotation.x = clamp(inputCube.rotation.x + toRadians(deltaY), -Math.PI / 2.01, Math.PI / 2.01);
 
             conv.rotation.set(inputCube.rotation.x, inputCube.rotation.y, inputCube.rotation.z);
             outputCube.rotation.set(inputCube.rotation.x, inputCube.rotation.y, inputCube.rotation.z);
-        }, false);
+        }
+
+        document.addEventListener('pointermove', e => move(e, e.clientX, e.clientY), false);
+        document.addEventListener('touchmove', e => move(e, e.touches[0].clientX, e.touches[0].clientY), false);
 
         canvas.addEventListener('pointerdown', e => {
             e.preventDefault();
@@ -101,21 +104,18 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         document.addEventListener('pointerup', e => {
             mouseDown = false;
         });
+        document.addEventListener('touchend', e => {
+            mouseDown = false;
+        });
 
-
-        // Hover objects
-        const raycaster = new THREE.Raycaster();
-        let hoveredTensors: Array<Tensor> = [];
-        canvas.addEventListener('pointermove', e => {
+        function onHover(e: Event, x: number, y: number) {
             // Fix element offset
             let rect = (e.target as HTMLElement).getBoundingClientRect();
-            let x = e.clientX - rect.left;
-            let y = e.clientY - rect.top;
             raycaster.setFromCamera({
-                x: (x / canvas.width) * 2 - 1,
-                y: - (y / canvas.height) * 2 + 1
-            }, camera );
-            const intersects = raycaster.intersectObject( scene, true );
+                x: ((x - rect.left) / canvas.width) * 2 - 1,
+                y: - ((y - rect.top) / canvas.height) * 2 + 1
+            }, camera);
+            const intersects = raycaster.intersectObject(scene, true);
             let newTensors: Array<Tensor> = [];
             for (const intersect of intersects) {
                 if (intersect.object instanceof THREE.Mesh && intersect.object.parent instanceof Tensor)
@@ -126,7 +126,13 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             for (const tensor of newTensors)
                 tensor.toggleLabels(true);
             hoveredTensors = newTensors;
-        });
+        }
+
+        // Hover objects
+        const raycaster = new THREE.Raycaster();
+        let hoveredTensors: Array<Tensor> = [];
+        canvas.addEventListener('pointermove', e => onHover(e, e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => onHover(e, e.touches[0].clientX, e.touches[0].clientY));
 
 
         const ambLight = new THREE.AmbientLight(0xaaaaaa, 1.1); // soft white light
