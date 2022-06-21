@@ -21,12 +21,11 @@ export default (props: any) => {
     return <Container>
         <CodeParamGroup>
             output.shape = (
-            <CodeParamReadOnly text="channels" value={outputChannels()} />,&nbsp
-            <CodeParamReadOnly text="height" value={outputHeight()} />,&nbsp
+            <CodeParamReadOnly text="channels" value={outputChannels()} />
+            <CodeParamReadOnly text="height" value={outputHeight()} />
             <CodeParamReadOnly text="width" value={outputWidth()} />
             )
         </CodeParamGroup>
         <div style={{ "min-width": "550px", "min-height": "400px" }} />
-        {/* <Cube3D channels={outputChannels()} height={outputHeight()} width={outputWidth()} colors={['#aaaacc', '#6677aa', '#ccddff', '#445577']} borderColor={"#223344"} /> */}
     </Container>
 }

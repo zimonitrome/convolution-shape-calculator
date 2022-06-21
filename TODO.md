@@ -11,14 +11,11 @@
 * List number of parameters in layer
 * Shrink page height
     * Depend shape placement and canvas height on div heights (inputshape div, )
-* ~~Fix dilation~~
 * Animate
     * Calculate number of steps for each conv configuration
     * Add animation step as a slider
-* ~~est on smartphone~~ Spoiler alert: It runs smoothly but rotating the cubes sucks
-    * ~~Fix move event~~
 * Add deconvolution
-* Make commas not wrap in paramgroups
+* ~~Make commas not wrap in paramgroups~~
 
 Maybe TODO:
 * Make lines transparent if they are behind and object
