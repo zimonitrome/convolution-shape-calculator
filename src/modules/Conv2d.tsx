@@ -16,11 +16,11 @@ export default (props: any) => {
     return <Container>
         <CodeParamGroup>
             Conv2d(
-            <CodeParamReadOnly text="input_channels" value={inputChannels()} />,&nbsp
-            <CodeParam text="output_channels" min={1} max={1024} scaling="pow2" signal={[outputChannels, setOutputChannels]} />,&nbsp
-            <CodeParam text="kernel_size" min={1} max={15} scaling="linear" signal={[kernelSize, setKernelSize]} />,&nbsp
-            <CodeParam text="stride" min={1} max={15} scaling="linear" signal={[stride, setStride]} />,&nbsp
-            <CodeParam text="padding" min={0} max={15} scaling="linear" signal={[padding, setPadding]} />,&nbsp
+            <CodeParamReadOnly text="input_channels" value={inputChannels()} />
+            <CodeParam text="output_channels" min={1} max={1024} scaling="pow2" signal={[outputChannels, setOutputChannels]} />
+            <CodeParam text="kernel_size" min={1} max={15} scaling="linear" signal={[kernelSize, setKernelSize]} />
+            <CodeParam text="stride" min={1} max={15} scaling="linear" signal={[stride, setStride]} />
+            <CodeParam text="padding" min={0} max={15} scaling="linear" signal={[padding, setPadding]} />
             <CodeParam text="dilation" min={1} max={15} scaling="linear" signal={[dilation, setDilation]} />
             )
         </CodeParamGroup>

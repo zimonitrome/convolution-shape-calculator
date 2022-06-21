@@ -1,5 +1,20 @@
 import { JSX } from "solid-js";
 
+export const InnerContainer = (props: any) => {
+    const innerContainerStyle: JSX.CSSProperties = {
+        "display": "flex",
+        "flex-wrap": "wrap",
+    }
+
+    return <div style={innerContainerStyle}>
+        {props.children.map((child: any, i: number, a: Array<any>) =>
+            <div style={{ "display": "flex", "flex-direction": "row" }}>
+                {child}{i < (a.length - 2) ? <>,&nbsp;</> : <></>}
+            </div>
+        )}
+    </div>
+}
+
 export default (props: any) => {
     const outerContainerStyle: JSX.CSSProperties = {
         "font-weight": "bold",
@@ -13,15 +28,10 @@ export default (props: any) => {
         "margin": "15px"
     }
 
-    const innerContainerStyle: JSX.CSSProperties = {
-        "display": "flex",
-        "flex-wrap": "wrap",
-    }
-
     return <div style={outerContainerStyle}>
         {props.children[0]}
-        <div style={innerContainerStyle}>
+        <InnerContainer>
             {props.children.slice(1)}
-        </div>
+        </InnerContainer>
     </div>
 }
