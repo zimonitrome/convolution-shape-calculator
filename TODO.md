@@ -16,7 +16,7 @@
     * Calculate number of steps for each conv configuration
     * Add animation step as a slider
 * ~~est on smartphone~~ Spoiler alert: It runs smoothly but rotating the cubes sucks
-    * Fix move event
+    * ~~Fix move event~~
 * Add deconvolution
 * Make commas not wrap in paramgroups
 
