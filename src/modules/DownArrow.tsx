@@ -16,5 +16,5 @@ export default (inProps: {width?: number, height?: number}) => {
         group.center(props.width/2, props.height/2).scale(props.width / 40, props.height / 40)
     })
 
-    return <div ref={elem}/>;
+    return <div ref={elem} style={{margin:"15px"}}/>;
 }

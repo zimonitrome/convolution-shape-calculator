@@ -24,6 +24,8 @@ export const numberInputStyle: JSX.CSSProperties = {
     "flex-basis": "100%"
 }
 
+export const LabelText = ({ text = "" }) => <span style={{ opacity: 0.4 }}>{text}: </span>;
+
 export default (inProps: CodeParamProps) => {
     const props = mergeProps({ min: 0, max: 10, step: 1, scaling: "linear" }, inProps)
 
@@ -47,7 +49,7 @@ export default (inProps: CodeParamProps) => {
 
     return <>
         <div style={codeParamStyle}>
-            <label><span style={{ opacity: 0.5 }}>{props.text}: </span><input type="number" min={props.min} max={props.max} style={numberInputStyle} value={getter()} onInput={e => setter(parseInt(e.currentTarget.value))} /></label>
+            <label><LabelText text={props.text} /><input type="number" min={props.min} max={props.max} style={numberInputStyle} value={getter()} onInput={e => setter(parseInt(e.currentTarget.value))} /></label>
             <input type="range" min={invScale(props.min)} max={invScale(props.max)} step="1" value={invScale(getter())} onInput={e => setter(scale(parseInt(e.currentTarget.value)))}></input>
         </div>
     </>;
