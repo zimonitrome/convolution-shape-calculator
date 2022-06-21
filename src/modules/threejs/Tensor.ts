@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { dispose } from "./utils";
 
 function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", unitSize = 64) {
     const n_colors = hexColors.length;
@@ -18,7 +19,7 @@ function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", uni
 }
 
 function getTextSprite(text: string, position: [number, number, number], fontsize = 24, scale = 0.12, anchor: [number, number] = [0.5, 0.5]) {
-    var textHeight = fontsize;
+    var textHeight = Math.round(fontsize*1.2);
     var canvas = document.createElement('canvas');
     var preContext = canvas.getContext('2d')!;
     preContext.font = `Bold ${textHeight}px ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace`;
@@ -31,7 +32,7 @@ function getTextSprite(text: string, position: [number, number, number], fontsiz
     context.fillStyle = "rgba(0, 0, 0, 1.0)";
     context.font = `Bold ${textHeight}px ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace`;
     context.textAlign = "center";
-    context.fillText(text, textWidth / 2, textHeight);
+    context.fillText(text, textWidth / 2, textHeight/1.2);
 
     var texture = new THREE.Texture(canvas);
     texture.needsUpdate = true;
@@ -39,24 +40,30 @@ function getTextSprite(text: string, position: [number, number, number], fontsiz
     var sprite = new THREE.Sprite(spriteMaterial);
     sprite.scale.set(scale * textWidth / textHeight, scale, 1.0);
     sprite.position.set(...position);
-    sprite.center.set(...anchor)
+    sprite.center.set(...anchor);
     return sprite;
 }
 
 export class Tensor extends THREE.Group {
-    public height: number;
-    public width: number;
-    public channels: number;
+    public height: number = 0;
+    public width: number = 0;
+    public channels: number = 0;
 
-    public boxHeight: number;
-    public boxWidth: number;
-    public boxDepth: number;
+    public boxHeight: number = 0;
+    public boxWidth: number = 0;
+    public boxDepth: number = 0;
 
-    public boxMesh: THREE.Mesh;
+    public boxMesh: THREE.Mesh = new THREE.Mesh();
+    public labels: Array<THREE.Sprite> = [];
 
-    // constructor(w: number, h: number, c: number, colors: Array<string>, borderColor: string, aspect: number = 1) {
-    constructor({ width = 1, height = 1, channels = 1, colors = ["#ffffff"], borderColor = "#000000", aspect = 1, labels = true }) {
+    constructor({ width = 1, height = 1, channels = 1, colors = ["#ffffff"], borderColor = "#000000",  scaleMultiplier = 1}) {
         super();
+
+        if ([width, height, channels].some(val => !val)) {
+            this.visible = false;
+            return;
+        }
+
         // Define properties of the tensor
         this.height = height;
         this.width = width;
@@ -69,9 +76,9 @@ export class Tensor extends THREE.Group {
 
         const max_side = Math.max(heightSpatial, widthSpatial, channelsSpatial, 1.6)
 
-        this.boxHeight = (heightSpatial / max_side)
-        this.boxWidth = (widthSpatial / max_side)
-        this.boxDepth = (channelsSpatial / max_side)
+        this.boxHeight = scaleMultiplier * (heightSpatial / max_side)
+        this.boxWidth = scaleMultiplier * (widthSpatial / max_side)
+        this.boxDepth = scaleMultiplier * (channelsSpatial / max_side)
 
         // Create geometry
         const boxGeometry = new THREE.BoxGeometry(this.boxWidth, this.boxHeight, this.boxDepth);
@@ -154,19 +161,43 @@ export class Tensor extends THREE.Group {
             new THREE.MeshBasicMaterial({ color: borderColor, side: THREE.BackSide })
         );
         backgroundBox.renderOrder = -1;
-        this.add(backgroundBox)
+        this.add(backgroundBox);
 
 
         // Add text
-        if (labels) {
-            const fontsize = 24;
-            const scale = 0.12;
-            this.add(
-                getTextSprite(`w = ${this.width}`, [0, -(this.boxHeight / 2 + 0.07), this.boxDepth / 2], fontsize, scale, [0, 1]),
-                getTextSprite(`h = ${this.height}`, [this.boxWidth / 2 + 0.09, 0, this.boxDepth / 2], fontsize, scale, [0, 0.5]),
-                getTextSprite(`c = ${this.channels}`, [-(this.boxWidth / 2 + 0.05), -(this.boxHeight / 2 + 0.05), 0], fontsize, scale, [1, 1]),
-            )
+        const fontsize = 48;
+        const scale = 0.12;
+        this.labels = [
+            getTextSprite(`w = ${this.width}`, [0, -(this.boxHeight / 2 + 0.07), this.boxDepth / 2], fontsize, scale, [0, 1]),
+            getTextSprite(`h = ${this.height}`, [this.boxWidth / 2 + 0.09, 0, this.boxDepth / 2], fontsize, scale, [0, 0.5]),
+            getTextSprite(`c = ${this.channels}`, [-(this.boxWidth / 2 + 0.05), -(this.boxHeight / 2 + 0.05), 0], fontsize, scale, [1, 1]),
+        ]
+        this.toggleLabels(false);
+        this.add(...this.labels);
+    }
+
+    public toggleLabels(visible: boolean) {
+        for (let label of this.labels) {
+            label.visible = visible;
         }
+    }
+
+    public assign(other: Tensor) {
+        this.height = other.height;
+        this.width = other.width;
+        this.channels = other.channels;
+
+        this.boxHeight = other.boxHeight;
+        this.boxWidth = other.boxWidth;
+        this.boxDepth = other.boxDepth;
+
+        this.boxMesh = other.boxMesh;
+        this.labels = other.labels;
+
+        dispose(this);
+        this.remove(...this.children);
+        if (other.children.length > 0)
+            this.add(...other.children);
     }
 
     get depth() {

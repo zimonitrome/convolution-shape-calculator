@@ -4,7 +4,6 @@ import CodeParamReadOnly from "./CodeParamReadOnly";
 import Container from "./Container";
 import { dilation, kernelSize, outputChannels, padding, stride } from "./Conv2d";
 import { inputHeight, inputWidth } from "./InputShape";
-import { Cube3D } from "./Cube3D";
 
 export const [outputHeight, setOutputHeight] = createSignal(NaN);
 export const [outputWidth, setOutputWidth] = createSignal(NaN);
