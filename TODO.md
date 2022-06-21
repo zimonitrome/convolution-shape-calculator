@@ -15,6 +15,12 @@
 * Animate
     * Calculate number of steps for each conv configuration
     * Add animation step as a slider
-* Test on smartphone
+* ~~est on smartphone~~ Spoiler alert: It runs smoothly but rotating the cubes sucks
     * Fix move event
 * Add deconvolution
+* Make commas not wrap in paramgroups
+
+Maybe TODO:
+* Make lines transparent if they are behind and object
+    * Otherwise: Think of how to better display lines
+    * Maybe make lines non-intersecting
