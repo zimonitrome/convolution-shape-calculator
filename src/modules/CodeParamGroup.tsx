@@ -9,6 +9,8 @@ export default (props: any) => {
         "justify-content": "center",
         "white-space": "nowrap",
         "font-size": "18pt",
+        "flex-grow": 1,
+        "margin": "15px"
     }
 
     const innerContainerStyle: JSX.CSSProperties = {

@@ -1,5 +1,4 @@
-import { Accessor, JSX, mergeProps } from "solid-js";
-import { codeParamStyle, numberInputStyle } from "./CodeParam";
+import { codeParamStyle, LabelText, numberInputStyle } from "./CodeParam";
 
 interface CodeParamProps {
     text: string;
@@ -7,8 +6,8 @@ interface CodeParamProps {
 }
 
 export default (props: CodeParamProps) => {
-    const outputStyle = { 
-        width: "4ch", 
+    const outputStyle = {
+        width: "4ch",
         "margin-right": "1ch",
         display: "inline-block",
         "text-align": "right"
@@ -16,8 +15,7 @@ export default (props: CodeParamProps) => {
 
     return <>
         <div style={codeParamStyle}>
-            <label><span style={{ opacity: 0.5 }}>{props.text}: </span><output style={outputStyle}>{props.value}</output></label>
-            {/* <label><span style={{ opacity: 0.5 }}>{props.text}: </span><input disabled type="number" style={numberInputStyle} value={props.value} /></label> */}
+            <label><LabelText text={props.text} /><output style={outputStyle}>{props.value}</output></label>
         </div>
     </>;
 }

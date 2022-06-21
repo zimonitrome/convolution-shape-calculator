@@ -7,7 +7,7 @@ import OutputShape from './modules/OutputShape';
 
 const App: Component = () => {
   return <>
-    <div class="App">
+    <div id="App">
       <InputShape />
       <DownArrow height={50} width={60} />
       <Conv2d />

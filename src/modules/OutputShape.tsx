@@ -4,7 +4,6 @@ import CodeParamReadOnly from "./CodeParamReadOnly";
 import Container from "./Container";
 import { dilation, kernelSize, outputChannels, padding, stride } from "./Conv2d";
 import { inputHeight, inputWidth } from "./InputShape";
-import { SvgCube } from "./SvgCube";
 
 export const [outputHeight, setOutputHeight] = createSignal(NaN);
 export const [outputWidth, setOutputWidth] = createSignal(NaN);
@@ -27,6 +26,7 @@ export default (props: any) => {
             <CodeParamReadOnly text="width" value={outputWidth()} />
             )
         </CodeParamGroup>
-        <SvgCube channels={outputChannels()} height={outputHeight()} width={outputWidth()} colors={['#aaaacc', '#6677aa', '#ccddff', '#445577']} borderColor={"#223344"} />
+        <div style={{ "min-width": "550px", "min-height": "400px" }} />
+        {/* <Cube3D channels={outputChannels()} height={outputHeight()} width={outputWidth()} colors={['#aaaacc', '#6677aa', '#ccddff', '#445577']} borderColor={"#223344"} /> */}
     </Container>
 }
