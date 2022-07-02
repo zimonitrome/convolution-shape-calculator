@@ -92,7 +92,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         }
 
         document.addEventListener('pointermove', e => move(e, e.clientX, e.clientY), false);
-        document.addEventListener('touchmove', e => move(e, e.touches[0].clientX, e.touches[0].clientY), false);
+        document.addEventListener('touchmove', e => move(e, e.touches[0].clientX, e.touches[0].clientY), {passive: false});
 
         canvas.addEventListener('pointerdown', e => {
             e.preventDefault();
@@ -108,6 +108,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             mouseDown = false;
         });
 
+        // Hover objects
         function onHover(e: Event, x: number, y: number) {
             // Fix element offset
             let rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -128,7 +129,6 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             hoveredTensors = newTensors;
         }
 
-        // Hover objects
         const raycaster = new THREE.Raycaster();
         let hoveredTensors: Array<Tensor> = [];
         canvas.addEventListener('pointermove', e => onHover(e, e.clientX, e.clientY));
