@@ -1,20 +1,16 @@
-import { G, MatrixTransformParam, SVG } from '@svgdotjs/svg.js';
-import { JSX, mergeProps, onMount } from 'solid-js';
+import { JSX } from "solid-js/jsx-runtime";
 
-export default (inProps: {width?: number, height?: number}) => {
-    const props = mergeProps({ width: 40, height: 40 }, inProps)
+export default () => {
+    const style: JSX.CSSProperties = {
+        "margin": "-15px",
+        "position": "relative",
+        "z-index": 1
+    };
 
-    let elem: HTMLDivElement | undefined = undefined;
-
-    onMount(() => {
-        const draw = SVG().addTo(elem!).size(props.width, props.height);
-        
-        let group = draw.group();
-        group.rect(10, 30).move(15, 0).fill("#000");
-        group.polygon([[5, 25], [35, 25], [20, 40]]).fill("#000");
-
-        group.center(props.width/2, props.height/2).scale(props.width / 40, props.height / 40)
-    })
-
-    return <div ref={elem} style={{margin:"15px"}}/>;
+    return <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="60" height="50" style={style}>
+        <g transform="matrix(1.5,0,0,1.25,-15,-6.25)">
+            <rect width="10" height="30" x="25" y="5" fill="#000000"></rect>
+            <polygon points="15,30 45,30 30,45" fill="#000000"></polygon>
+        </g>
+    </svg>;
 }

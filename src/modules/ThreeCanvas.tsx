@@ -43,8 +43,11 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-
         const updateCanvas = async () => {
+            if (renderer.getSize(new THREE.Vector2()).equals(new THREE.Vector2(elem!.parentElement!.clientWidth, elem!.parentElement!.clientHeight))) {
+                return;
+            }
+
             let width = elem!.parentElement!.clientWidth;
             let height = elem!.parentElement!.clientHeight;
             let aspect = width / height;
@@ -57,8 +60,6 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
             renderer.setSize(width, height);
         }
-        window.addEventListener("resize", updateCanvas, false);
-
 
         let inputCube = new Tensor({});
         scene.add(inputCube);
@@ -92,7 +93,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         }
 
         document.addEventListener('pointermove', e => move(e, e.clientX, e.clientY), false);
-        document.addEventListener('touchmove', e => move(e, e.touches[0].clientX, e.touches[0].clientY), {passive: false});
+        document.addEventListener('touchmove', e => move(e, e.touches[0].clientX, e.touches[0].clientY), { passive: false });
 
         canvas.addEventListener('pointerdown', e => {
             e.preventDefault();
@@ -143,6 +144,8 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         scene.add(dirLight);
 
         function animate() {
+            updateCanvas();
+
             conv.update(scene, camera);
 
             requestAnimationFrame(animate);
@@ -170,10 +173,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
 
         createEffect(() => {
-            updateCanvas();
-
             inputCube.assign(new Tensor({ ...props }));
-
 
             outputCube.assign(new Tensor({
                 width: outputWidth(), height: outputHeight(), channels: outputChannels(),
