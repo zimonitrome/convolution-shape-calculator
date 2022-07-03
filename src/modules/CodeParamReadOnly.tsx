@@ -1,3 +1,4 @@
+import { JSX } from "solid-js/jsx-runtime";
 import { codeParamStyle, LabelText, numberInputStyle } from "./CodeParam";
 
 interface CodeParamProps {
@@ -6,10 +7,10 @@ interface CodeParamProps {
 }
 
 export default (props: CodeParamProps) => {
-    const outputStyle = {
-        width: "4ch",
+    const outputStyle: JSX.CSSProperties = {
+        "width": "4ch",
         "margin-right": "1ch",
-        display: "inline-block",
+        "display": "inline-block",
         "text-align": "right"
     }
 

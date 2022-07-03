@@ -10,12 +10,12 @@
 * Add bias
 * List number of parameters in layer
 * Shrink page height
-    * Depend shape placement and canvas height on div heights (inputshape div, )
+    * Depend shape placement and canvas height on div heights (inputshape div, conv div, outputshape div)
+    * ~~Make arrow smaller/overlap~~
 * Animate
     * Calculate number of steps for each conv configuration
     * Add animation step as a slider
 * Add deconvolution
-* ~~Make commas not wrap in paramgroups~~
 
 Maybe TODO:
 * Make lines transparent if they are behind and object
