@@ -233,11 +233,18 @@ export class Conv2D extends THREE.Group {
         this.backgroundShape.renderOrder = 0;
         this.add(this.backgroundShape);
 
+        const outZPos = Math.floor(step / (outputTensor.width * outputTensor.height));
+        const colorPalettes = [
+            ["#E22030", "#00AEAC", "#136371", "#F2B995"],
+            ["#705A5E", "#058ED9", "#F4EBD9", "#A39A92"],
+            ["#F2B705", "#F2760C", "#F29F05", "#F2D492"],
+            ["#77685D", "#F2D492", "#F2B705", "#F2760C"],
+        ]
 
         // Create filter/kernel tensor box
         this.weightTensor = new Tensor({
             width: kernelSize, height: kernelSize, channels: inputTensor.channels,
-            colors: ["#E22030", "#00AEAC", "#136371", "#F2B995"], borderColor: "#1E3A4B",
+            colors: colorPalettes[outZPos % colorPalettes.length], borderColor: "#1E3A4B",
             scaleMultiplier: 0.7
         });
         this.weightTensor.renderOrder = 0.5;
@@ -282,7 +289,6 @@ export class Conv2D extends THREE.Group {
         // Output kernel outline
         const outXPos = step % outputTensor.width;
         const outYPos = Math.floor(step / outputTensor.width) % outputTensor.height;
-        const outZPos = Math.floor(step / (outputTensor.width * outputTensor.height));
         this.outputTensorKernel = getCubeBox({
             tensor: outputTensor,
             wSpan: [outXPos, outXPos + 1],
