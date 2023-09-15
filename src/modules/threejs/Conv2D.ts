@@ -22,21 +22,21 @@ function getBoxFrom8Points(points: Array<[number, number, number]>) {
         // 5, 4, 6, 7, // top
         // 2, 3, 1, 0  // bottom
     ];
-    
+
     const numVertices = vertexIndices.length;
     const dims = 3;
     const positions = new Float32Array(numVertices * dims);
-    
+
     vertexIndices.forEach((vertexIdx, i) => {
         positions.set(points[vertexIdx], i * dims);
     });
-    
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute(
         'position',
         new THREE.BufferAttribute(positions, dims)
     );
-    
+
     geometry.setIndex([
         0, 1, 2, 2, 1, 3,  // front
         4, 5, 6, 6, 5, 7,  // right
@@ -49,7 +49,7 @@ function getBoxFrom8Points(points: Array<[number, number, number]>) {
 
     return geometry;
 }
-    
+
 
 function getThinBox({ w = 1, h = 1, d = 1 }) {
     let boxgeom = new THREE.BoxGeometry(w, h, d);
@@ -144,12 +144,12 @@ function getCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0, 1], c
 
 function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0, 1], cSpan = [0, 1], padding = 0.03, dilation = 2 }) {
     let meshes = [];
-    for (let w = wSpan[0]; w < wSpan[1] ; w += dilation) {
-        for (let h = hSpan[0]; h < hSpan[1] ; h += dilation) {
+    for (let w = wSpan[0]; w < wSpan[1]; w += dilation) {
+        for (let h = hSpan[0]; h < hSpan[1]; h += dilation) {
             let cubeBox = getCubeBox({
                 tensor,
-                wSpan: [w, w+1],
-                hSpan: [h, h+1],
+                wSpan: [w, w + 1],
+                hSpan: [h, h + 1],
                 cSpan,
                 padding
             })
@@ -160,12 +160,12 @@ function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0
     let combinedGeoms = mergeBufferGeometries(meshes.map(b => {
         b.updateMatrixWorld();
         let box3 = b.geometry.boundingBox!;
-        const dimensions = new THREE.Vector3().subVectors( box3.max, box3.min );
+        const dimensions = new THREE.Vector3().subVectors(box3.max, box3.min);
         const boxGeo = new THREE.BoxBufferGeometry(dimensions.x, dimensions.y, dimensions.z);
 
         return boxGeo.applyMatrix4(b.matrixWorld);
-      }), false);
-    
+    }), false);
+
     let lines = new LineSegmentsGeometry().fromEdgesGeometry(new THREE.EdgesGeometry(combinedGeoms));
     let borderColors = [];
     for (let i = 0; i < lines.attributes.instanceStart.count; i++) {
@@ -180,7 +180,7 @@ function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0
         worldUnits: false,
         resolution: new THREE.Vector2(element.clientWidth / element.clientHeight, 1)
     });
-    
+
     return new THREE.Mesh(lines, mat)
 }
 
@@ -208,7 +208,7 @@ export class Conv2D extends THREE.Group {
 
     constructor({
         inputTensor = new Tensor({}), outputTensor = new Tensor({}),
-        kernelSize = 3, stride = 2, padding = 0, dilation = 1
+        kernelSize = 3, stride = 2, padding = 0, dilation = 1, step = 0
     }) {
         super();
 
@@ -245,11 +245,19 @@ export class Conv2D extends THREE.Group {
 
 
         // Input kernel outline
+        const physicalKernelSize = kernelSize + (kernelSize-1)*(dilation-1);
+
+        const numberOfColumns = outputTensor.width;
+        const numberOfRows = outputTensor.height;
+        const inpXPos = (step % numberOfColumns) * stride;
+        const inpYPos = (Math.floor(step / numberOfColumns) % numberOfRows) * stride;
         if (dilation > 1) {
             this.inputTensorKernel = getDilatedCubeBox({
                 tensor: inputTensor,
-                wSpan: [0 - padding, (kernelSize*dilation-1) - padding],
-                hSpan: [0 - padding, (kernelSize*dilation-1) - padding],
+                // wSpan: [0 - padding, (kernelSize*dilation-1) - padding],
+                // hSpan: [0 - padding, (kernelSize*dilation-1) - padding],
+                wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
+                hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
                 cSpan: [0, inputTensor.channels],
                 dilation
             })
@@ -257,8 +265,8 @@ export class Conv2D extends THREE.Group {
         else {
             this.inputTensorKernel = getCubeBox({
                 tensor: inputTensor,
-                wSpan: [0 - padding, kernelSize - padding],
-                hSpan: [0 - padding, kernelSize - padding],
+                wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
+                hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
                 cSpan: [0, inputTensor.channels]
             })
         }
@@ -272,9 +280,14 @@ export class Conv2D extends THREE.Group {
         this.weightTensor.add(this.selfTensorKernel);
 
         // Output kernel outline
+        const outXPos = step % outputTensor.width;
+        const outYPos = Math.floor(step / outputTensor.width) % outputTensor.height;
+        const outZPos = Math.floor(step / (outputTensor.width * outputTensor.height));
         this.outputTensorKernel = getCubeBox({
-            tensor: outputTensor, wSpan: [0, 1],
-            hSpan: [0, 1], cSpan: [0, 1]
+            tensor: outputTensor,
+            wSpan: [outXPos, outXPos + 1],
+            hSpan: [outYPos, outYPos + 1],
+            cSpan: [outZPos, outZPos + 1]
         })
         outputTensor.add(this.outputTensorKernel);
 
@@ -311,7 +324,7 @@ export class Conv2D extends THREE.Group {
         let selfTensorKernelBottom4PointsSorted = selfTensorKernelBottom4Points.sort(sortfunc);
         let selfTensorKernelTop4PointsSorted = selfTensorKernelTop4Points.sort(sortfunc);
         let outputTensorKernelTop4PointsSorted = outputTensorKernelTop4Points.sort(sortfunc);
-        
+
         let geometry = new LineSegmentsGeometry().setPositions([
             ...selfTensorKernelTop4PointsSorted[0].toArray(), ...inputTensorKernelBottom4PointsSorted[0].toArray(), // Line 1
             ...selfTensorKernelTop4PointsSorted[selfTensorKernelTop4PointsSorted.length - 1].toArray(), ...inputTensorKernelBottom4PointsSorted[inputTensorKernelBottom4PointsSorted.length - 1].toArray(), // Line 2
@@ -322,7 +335,7 @@ export class Conv2D extends THREE.Group {
 
         scene.remove(this.connections);
         this.connections = new THREE.Mesh(
-            geometry, 
+            geometry,
             this.connections.material
         );
         this.connections.renderOrder = 1;
@@ -340,7 +353,7 @@ export class Conv2D extends THREE.Group {
         this.inputTensorKernel = other.inputTensorKernel;
         this.selfTensorKernel = other.selfTensorKernel;
         this.outputTensorKernel = other.outputTensorKernel;
-    
+
         dispose(this);
         this.remove(...this.children);
         if (other.children.length > 0)

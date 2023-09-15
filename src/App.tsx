@@ -4,14 +4,16 @@ import DownArrow from './modules/DownArrow';
 import Footer from './modules/Footer';
 import InputShape from './modules/InputShape';
 import OutputShape from './modules/OutputShape';
+import TimelineControl from './modules/TimelineControl';
 
 const App: Component = () => {
   return <>
     <div id="App">
+      <TimelineControl />
       <InputShape />
-      <DownArrow height={50} width={60} />
+      <DownArrow />
       <Conv2d />
-      <DownArrow height={50} width={60} />
+      <DownArrow />
       <OutputShape />
     </div>
     <Footer/>
