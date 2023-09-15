@@ -33,8 +33,8 @@ const PlayButton = () => {
 
     return <button style={style} onclick={onClick}>
         <div style={{
-            "transform": isPlaying() ? "scaleX(1.5) translateY(-7%)" : "scaleY(0.9) translateX(3%)",
-        }}>{isPlaying() ? '⏸' : '▶'}</div>
+            "transform": isPlaying() ? "scaleX(3)" : "scaleX(0.9) scaleY(0.9) translateX(3%) translateY(-5%)"
+        }}>{isPlaying() ? 'ǁ' : '▶'}</div>
     </button>
 }
 
