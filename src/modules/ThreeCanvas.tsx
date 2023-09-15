@@ -5,6 +5,7 @@ import { dilation, kernelSize, outputChannels, padding, stride } from './Conv2d'
 import { Tensor } from './threejs/Tensor';
 import { canvas2DToWorld3D, clamp, getBboxVertecies, rotateAboutPoint, toRadians } from './threejs/utils';
 import { Conv2D } from './threejs/Conv2D';
+import { step } from './TimelineControl';
 
 
 interface Cube3DProps {
@@ -197,7 +198,8 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
             conv.assign(new Conv2D({
                 inputTensor: inputCube, outputTensor: outputCube,
-                kernelSize: kernelSize(), stride: stride(), padding: padding(), dilation: dilation()
+                kernelSize: kernelSize(), stride: stride(), padding: padding(), dilation: dilation(),
+                step: step()
             }));
             conv.update(scene, camera);
         });
