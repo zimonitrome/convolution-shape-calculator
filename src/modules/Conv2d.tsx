@@ -5,7 +5,7 @@ import CodeParamReadOnly from "./CodeParamReadOnly";
 import Container from "./Container";
 import { inputChannels } from "./InputShape";
 
-export const [outputChannels, setOutputChannels] = createSignal(1);
+export const [outputChannels, setOutputChannels] = createSignal(16);
 export const [kernelSize, setKernelSize] = createSignal(3);
 export const [stride, setStride] = createSignal(2);
 export const [padding, setPadding] = createSignal(0);
