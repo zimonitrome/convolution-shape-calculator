@@ -10,11 +10,13 @@ const App: Component = () => {
   return <>
     <div id="App">
       <TimelineControl />
-      <InputShape />
-      <DownArrow />
-      <Conv2d />
-      <DownArrow />
-      <OutputShape />
+      <div>
+        <InputShape />
+        <DownArrow />
+        <Conv2d />
+        <DownArrow />
+        <OutputShape />
+      </div>
     </div>
     <Footer/>
   </>;
