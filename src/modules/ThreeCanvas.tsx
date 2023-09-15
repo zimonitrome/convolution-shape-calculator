@@ -23,7 +23,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
     onMount(() => {
         const width = 550;
-        const height = 1367;
+        const height = 1567;
         const aspect = width / height;
         const scene = new THREE.Scene();
         var d = 1;
@@ -45,12 +45,17 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
         const updateCanvas = async () => {
-            if (renderer.getSize(new THREE.Vector2()).equals(new THREE.Vector2(elem!.parentElement!.clientWidth, elem!.parentElement!.clientHeight))) {
+            // WOW THIS IS A HACK
+            const mainContainerDiv = elem!.parentElement!.parentElement!;
+            const inputConvOutputDiv = elem!.parentElement!.parentElement!.parentElement!.parentElement!;
+
+            if (renderer.getSize(new THREE.Vector2()).equals(new THREE.Vector2(mainContainerDiv.clientWidth, inputConvOutputDiv.clientHeight))) {
                 return;
             }
 
-            let width = elem!.parentElement!.clientWidth;
-            let height = elem!.parentElement!.clientHeight;
+            let width = mainContainerDiv.clientWidth;
+            let height = inputConvOutputDiv.clientHeight;
+            console.log(width, height);
             let aspect = width / height;
 
             camera.left = -d * aspect;
@@ -173,17 +178,19 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         let universalAngle: [number, number, number] = [toRadians(10), toRadians(25), 0];
 
         // // TRANSFORMING TODO: MOVE!!!!
-        pos = canvas2DToWorld3D(canvas.width / 2, 400 + 80 + 400 + 80 + 400 / 2, camera, canvas);
+        const containerHeight = 400;
+        const containerPadding = 23;
+        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight * 2 + containerPadding * 2 + containerHeight / 2, camera, canvas);
         outputCube.position.set(pos.x, pos.y, pos.z);
         outputCube.scale.set(0.3, 0.3, 0.3);
         outputCube.rotation.set(...universalAngle);
 
-        pos = canvas2DToWorld3D(canvas.width / 2, 400 / 2, camera, canvas);
+        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight / 2, camera, canvas);
         inputCube.position.set(pos.x, pos.y, pos.z);
         inputCube.scale.set(0.3, 0.3, 0.3);
         inputCube.rotation.set(...universalAngle);
 
-        pos = canvas2DToWorld3D(canvas.width / 2, 400 + 80 + 400 / 2, camera, canvas);
+        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight + containerPadding + containerHeight / 2, camera, canvas);
         conv.position.set(pos.x, pos.y, pos.z);
         conv.rotation.set(...universalAngle);
 
