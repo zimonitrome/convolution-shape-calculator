@@ -34,6 +34,10 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             alpha: true
         });
 
+        // Keep the pre-r152 look: colors were authored without color management
+        THREE.ColorManagement.enabled = false;
+        renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
+
         renderer.setClearColor(0x000000, 0);
 
 
@@ -126,10 +130,10 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         function onHover(e: Event, x: number, y: number) {
             // Fix element offset
             let rect = (e.target as HTMLElement).getBoundingClientRect();
-            raycaster.setFromCamera({
-                x: ((x - rect.left) / canvas.width) * 2 - 1,
-                y: - ((y - rect.top) / canvas.height) * 2 + 1
-            }, camera);
+            raycaster.setFromCamera(new THREE.Vector2(
+                ((x - rect.left) / canvas.width) * 2 - 1,
+                - ((y - rect.top) / canvas.height) * 2 + 1
+            ), camera);
             const intersects = raycaster.intersectObject(scene, true);
             let newTensors: Array<Tensor> = [];
             for (const intersect of intersects) {
@@ -145,10 +149,10 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
         function didHoverSomething(e: Event, x: number, y: number) {
             let rect = (e.target as HTMLElement).getBoundingClientRect();
-            raycaster.setFromCamera({
-                x: ((x - rect.left) / canvas.width) * 2 - 1,
-                y: - ((y - rect.top) / canvas.height) * 2 + 1
-            }, camera);
+            raycaster.setFromCamera(new THREE.Vector2(
+                ((x - rect.left) / canvas.width) * 2 - 1,
+                - ((y - rect.top) / canvas.height) * 2 + 1
+            ), camera);
             const intersects = raycaster.intersectObject(scene, true);
             return intersects.length > 0;
         }
@@ -157,10 +161,11 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         canvas.addEventListener('touchstart', e => onHover(e, e.touches[0].clientX, e.touches[0].clientY));
 
 
-        const ambLight = new THREE.AmbientLight(0xaaaaaa, 1.1); // soft white light
+        // Intensities scaled by PI to match the legacy (pre-r155) lighting mode
+        const ambLight = new THREE.AmbientLight(0xaaaaaa, 1.1 * Math.PI); // soft white light
         ambLight.position.set(12, 18, 15);
         scene.add(ambLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.4 * Math.PI);
         dirLight.position.set(12, 18, 15);
         scene.add(dirLight);
 

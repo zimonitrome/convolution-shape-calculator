@@ -23,7 +23,7 @@ const PlayButton = () => {
     function onClick() {
         setPlaying(!isPlaying());
         if (isPlaying() && interval == undefined) {
-            interval = setInterval(() => setStep((step() + 1) % (totalSteps())), 500);
+            interval = window.setInterval(() => setStep((step() + 1) % (totalSteps())), 500);
         }
         else {
             clearInterval(interval);

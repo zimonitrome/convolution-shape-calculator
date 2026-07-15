@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import { Tensor } from "./Tensor";
-import { LineMaterial } from "three/examples/jsm/lines/LineMaterial";
-import { LineSegmentsGeometry } from "three/examples/jsm/lines/LineSegmentsGeometry";
-import { mergeBufferGeometries } from "three/examples/jsm/utils/BufferGeometryUtils";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { dispose, getBboxVertecies as getBboxVertices, world3DToCanvas2D } from "./utils";
 
 function getFrustumGeometry(raidusTop: number, radiusBottom: number) {
@@ -157,11 +157,11 @@ function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0
         }
     }
 
-    let combinedGeoms = mergeBufferGeometries(meshes.map(b => {
+    let combinedGeoms = mergeGeometries(meshes.map(b => {
         b.updateMatrixWorld();
         let box3 = b.geometry.boundingBox!;
         const dimensions = new THREE.Vector3().subVectors(box3.max, box3.min);
-        const boxGeo = new THREE.BoxBufferGeometry(dimensions.x, dimensions.y, dimensions.z);
+        const boxGeo = new THREE.BoxGeometry(dimensions.x, dimensions.y, dimensions.z);
 
         return boxGeo.applyMatrix4(b.matrixWorld);
     }), false);
@@ -297,19 +297,22 @@ export class Conv2D extends THREE.Group {
         })
         outputTensor.add(this.outputTensorKernel);
 
-        let geometry = new LineSegmentsGeometry().setPositions([]);
+        // Degenerate segment instead of [] to avoid a NaN bounding sphere
+        let geometry = new LineSegmentsGeometry().setPositions([0, 0, 0, 0, 0, 0]);
         this.connections = new THREE.Mesh(
             geometry,
             new LineMaterial({
                 color: 0x000000,
                 linewidth: 0.005,
-                vertexColors: true,
-                depthTest: false
+                depthTest: false,
+                // LineMaterial's default resolution changed from (1,1) to (0,0)
+                // in newer three.js, which makes lines invisible unless set
+                resolution: new THREE.Vector2(1, 1)
             })
         );
     }
 
-    public update(scene: THREE.Object3D<THREE.Event>, camera: THREE.Camera) {
+    public update(scene: THREE.Object3D, camera: THREE.Camera) {
         // return;
         let selfTensorKernelPoints = getBboxVertices(this.selfTensorKernel.geometry.boundingBox!)
         let inputTensorKernelPoints = getBboxVertices(this.inputTensorKernel.geometry.boundingBox!);
