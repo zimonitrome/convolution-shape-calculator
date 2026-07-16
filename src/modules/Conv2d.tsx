@@ -1,4 +1,5 @@
-import { createSignal } from "solid-js";
+import { createSignal, Show } from "solid-js";
+import { JSX } from "solid-js/jsx-runtime";
 import CodeParam from "./CodeParam";
 import CodeParamBool from "./CodeParamBool";
 import CodeParamGroup from "./CodeParamGroup";
@@ -14,8 +15,31 @@ export const [dilation, setDilation] = createSignal(1);
 export const [bias, setBias] = createSignal(true);
 
 
+const ParamsCount = () => {
+    const total = () =>
+        outputChannels() * inputChannels() * kernelSize() * kernelSize()
+        + (bias() ? outputChannels() : 0);
+
+    const style: JSX.CSSProperties = {
+        "font-weight": "bold",
+        "font-family": "ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace",
+        "font-size": "18pt",
+        "opacity": 0.4,
+        "text-align": "center",
+        "white-space": "nowrap",
+        "margin": "15px",
+    }
+
+    return <Show when={Number.isFinite(total())}>
+        <div style={style}>
+            params = {outputChannels()} × {inputChannels()} × {kernelSize()} × {kernelSize()}{bias() ? ` + ${outputChannels()}` : ""} = {total()}
+        </div>
+    </Show>;
+}
+
 export default (props: any) => {
     return <Container>
+        <div style={{ "display": "flex", "flex-direction": "column", "flex-grow": 1 }}>
         <CodeParamGroup>
             Conv2d(
             <CodeParamReadOnly text="input_channels" value={inputChannels()} />
@@ -27,6 +51,8 @@ export default (props: any) => {
             <CodeParamBool text="bias" signal={[bias, setBias]} />
             )
         </CodeParamGroup>
+        <ParamsCount />
+        </div>
         <div style={{ "min-width": "550px", "min-height": "400px" }} />
     </Container>
 }
