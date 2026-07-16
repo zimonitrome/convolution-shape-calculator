@@ -18,7 +18,7 @@ function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", uni
     return new THREE.CanvasTexture(canvas);
 }
 
-function getTextSprite(text: string, position: [number, number, number], fontsize = 24, scale = 0.12, anchor: [number, number] = [0.5, 0.5]) {
+export function getTextSprite(text: string, position: [number, number, number], fontsize = 24, scale = 0.12, anchor: [number, number] = [0.5, 0.5]) {
     var textHeight = Math.round(fontsize*1.2);
     var canvas = document.createElement('canvas');
     var preContext = canvas.getContext('2d')!;

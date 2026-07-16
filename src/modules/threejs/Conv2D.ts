@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { Tensor } from "./Tensor";
+import { Tensor, getTextSprite } from "./Tensor";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -208,7 +208,7 @@ export class Conv2D extends THREE.Group {
 
     constructor({
         inputTensor = new Tensor({}), outputTensor = new Tensor({}),
-        kernelSize = 3, stride = 2, padding = 0, dilation = 1, step = 0
+        kernelSize = 3, stride = 2, padding = 0, dilation = 1, bias = true, step = 0
     }) {
         super();
 
@@ -250,6 +250,103 @@ export class Conv2D extends THREE.Group {
         this.weightTensor.renderOrder = 0.5;
         this.add(this.weightTensor);
 
+        // Faded previews of the previous/next filter beside the current one,
+        // so a color change reads as "next filter in the stack" rather than a
+        // random swap. Only the immediate neighbors are shown, since
+        // output_channels can be in the hundreds.
+        const numFilters = outputTensor.depth;
+        const ghostScale = 0.55;
+        const ghostOpacity = 0.35;
+        for (const dir of [-1, 1]) {
+            const filterIdx = outZPos + dir;
+            if (!(filterIdx >= 0 && filterIdx < numFilters)) continue;
+
+            const ghost = new Tensor({
+                width: kernelSize, height: kernelSize, channels: inputTensor.channels,
+                colors: colorPalettes[filterIdx % colorPalettes.length], borderColor: "#1E3A4B",
+                scaleMultiplier: 0.7
+            });
+            // No w/h/c hover labels on ghosts
+            ghost.remove(...ghost.labels);
+            ghost.labels = [];
+
+            ghost.scale.multiplyScalar(ghostScale);
+            const ghostOffsetX = dir * ((this.weightTensor.boxWidth + ghostScale * ghost.boxWidth) / 2 + 0.14);
+            ghost.position.set(ghostOffsetX, 0, 0);
+            ghost.traverse(obj => {
+                if (!(obj instanceof THREE.Mesh)) return;
+                // Above the background frustum (0), below the current kernel (0.5)
+                obj.renderOrder = 0.25;
+                const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
+                for (const material of materials) {
+                    material.transparent = true;
+                    material.opacity = ghostOpacity;
+                    material.depthWrite = false;
+                }
+            });
+            this.add(ghost);
+
+            // "···" when there are more filters beyond the shown neighbor
+            const moreIdx = filterIdx + dir;
+            if (moreIdx >= 0 && moreIdx < numFilters) {
+                const dots = getTextSprite("···", [0, 0, 0], 48, 0.09);
+                dots.material.opacity = ghostOpacity;
+                // Don't punch a hole in the ghost behind: the sprite's
+                // transparent quad must not write depth
+                dots.material.depthWrite = false;
+                // Same edge-to-edge gap as between the main filter and a ghost
+                dots.position.set(
+                    ghostOffsetX + dir * (ghostScale * ghost.boxWidth / 2 + 0.14 + dots.scale.x / 2),
+                    0,
+                    0
+                );
+                this.add(dots);
+            }
+        }
+
+        // Bias: one scalar per filter, drawn as a 1x1x1 cube added ("+") to
+        // the current filter, below its bottom-right corner
+        const palette = colorPalettes[outZPos % colorPalettes.length];
+        if (bias && palette) {
+            const biasTensor = new Tensor({
+                width: 1, height: 1, channels: 1,
+                colors: [palette[0]], borderColor: "#1E3A4B",
+                scaleMultiplier: 0.7
+            });
+            const kernelHalfH = this.weightTensor.boxHeight / 2;
+            biasTensor.position.set(0, -(kernelHalfH + 0.28), 0);
+
+            // Replace the w/h/c hover labels with a single "bias" label
+            biasTensor.remove(...biasTensor.labels);
+            const biasLabel = getTextSprite(
+                "bias",
+                [0, -(biasTensor.boxHeight / 2 + 0.04), 0],
+                48, 0.12, [0.5, 1]
+            );
+            biasLabel.visible = false;
+            biasTensor.labels = [biasLabel];
+            biasTensor.add(biasLabel);
+            this.add(biasTensor);
+
+            this.add(getTextSprite(
+                "+",
+                [0, -(kernelHalfH + 0.14), 0],
+                48, 0.16
+            ));
+        }
+
+        // Label showing which filter is currently applied, shown on hover
+        // together with the tensor's w/h/c labels
+        if (Number.isFinite(numFilters) && numFilters >= 1) {
+            const filterLabel = getTextSprite(
+                `filter ${outZPos + 1}/${numFilters}`,
+                [0, this.weightTensor.boxHeight / 2 + 0.15, 0],
+                48, 0.12, [0.5, 0]
+            );
+            filterLabel.visible = false;
+            this.weightTensor.labels.push(filterLabel);
+            this.weightTensor.add(filterLabel);
+        }
 
         // Input kernel outline
         const physicalKernelSize = kernelSize + (kernelSize-1)*(dilation-1);

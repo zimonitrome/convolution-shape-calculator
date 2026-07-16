@@ -1,5 +1,6 @@
 import { createSignal } from "solid-js";
 import CodeParam from "./CodeParam";
+import CodeParamBool from "./CodeParamBool";
 import CodeParamGroup from "./CodeParamGroup";
 import CodeParamReadOnly from "./CodeParamReadOnly";
 import Container from "./Container";
@@ -10,6 +11,7 @@ export const [kernelSize, setKernelSize] = createSignal(3);
 export const [stride, setStride] = createSignal(2);
 export const [padding, setPadding] = createSignal(0);
 export const [dilation, setDilation] = createSignal(1);
+export const [bias, setBias] = createSignal(true);
 
 
 export default (props: any) => {
@@ -22,6 +24,7 @@ export default (props: any) => {
             <CodeParam text="stride" min={1} max={15} scaling="linear" signal={[stride, setStride]} />
             <CodeParam text="padding" min={0} max={15} scaling="linear" signal={[padding, setPadding]} />
             <CodeParam text="dilation" min={1} max={15} scaling="linear" signal={[dilation, setDilation]} />
+            <CodeParamBool text="bias" signal={[bias, setBias]} />
             )
         </CodeParamGroup>
         <div style={{ "min-width": "550px", "min-height": "400px" }} />

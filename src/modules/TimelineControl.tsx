@@ -1,4 +1,4 @@
-import { createEffect, createSignal, JSX } from "solid-js";
+import { createEffect, createSignal, For, JSX } from "solid-js";
 import { outputChannels } from "./Conv2d";
 import { outputHeight, outputWidth } from "./OutputShape";
 
@@ -39,6 +39,14 @@ const PlayButton = () => {
 }
 
 export default (props: any) => {
+    // One tick per filter, at the step where that filter starts
+    const filterStartSteps = () => {
+        const stepsPerFilter = outputWidth() * outputHeight();
+        if (!Number.isFinite(stepsPerFilter) || !Number.isFinite(outputChannels()))
+            return [];
+        return Array.from({ length: outputChannels() }, (_, k) => k * stepsPerFilter);
+    };
+
     const outerContainerStyle: JSX.CSSProperties = {
         "font-weight": "bold",
         "font-family": "ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace",
@@ -70,6 +78,11 @@ export default (props: any) => {
             <div style={{"width": "3ch"}}>/</div>
             <div>{totalSteps()}</div>
         </label>
-        <input type="range" min="0" max={totalSteps() || 0} id="timelineControl" value={step()} onInput={e => setStep(parseInt(e.currentTarget.value))} style={{"width": "100%"}}/>
+        <input type="range" min="0" max={totalSteps() || 0} id="timelineControl" list="timelineTicks" value={step()} onInput={e => setStep(parseInt(e.currentTarget.value))} style={{"width": "100%"}}/>
+        <datalist id="timelineTicks">
+            <For each={filterStartSteps()}>
+                {startStep => <option value={startStep}></option>}
+            </For>
+        </datalist>
     </div>
 }
