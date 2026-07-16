@@ -3,7 +3,7 @@ import { Tensor, getTextSprite } from "./Tensor";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { dispose, getBboxVertecies as getBboxVertices, world3DToCanvas2D } from "./utils";
+import { clamp, dispose, getBboxVertecies as getBboxVertices, world3DToCanvas2D } from "./utils";
 
 function getFrustumGeometry(raidusTop: number, radiusBottom: number) {
     let preGeometry = new THREE.CylinderGeometry(raidusTop / Math.sqrt(2), radiusBottom / Math.sqrt(2), 1, 4, 1); // size of top can be changed
@@ -157,6 +157,11 @@ function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0
         }
     }
 
+    // mergeGeometries([]) returns undefined and would throw below; can
+    // happen if the spans are NaN or empty
+    if (meshes.length === 0)
+        return getBox({ w: 0, h: 0, d: 0 });
+
     let combinedGeoms = mergeGeometries(meshes.map(b => {
         b.updateMatrixWorld();
         let box3 = b.geometry.boundingBox!;
@@ -200,6 +205,7 @@ export class Conv2D extends THREE.Group {
 
     public backgroundShape: THREE.Mesh;
     public connections: THREE.Mesh;
+    public isValid: boolean = true;
     // public inputWeightConnection: THREE.Line3;
 
     // private outlinePass?: OutlinePass;
@@ -214,6 +220,19 @@ export class Conv2D extends THREE.Group {
 
         this.inputTensor = inputTensor;
         this.outputTensor = outputTensor;
+
+        // With missing/invalid dimensions (e.g. dilation pushed the output
+        // shape below 1, or a cleared parameter field) no kernel outline can
+        // be placed. Build inert placeholders instead of NaN geometry: a
+        // throw inside the render effect kills Solid's update propagation
+        // and leaves the whole app in a stale, inconsistent state.
+        this.isValid = [inputTensor, outputTensor].every(t => t.width > 0 && t.height > 0 && t.depth > 0)
+            && [kernelSize, stride, padding, dilation, step].every(Number.isFinite);
+
+        // The timeline step can briefly outlive a shrunken output shape;
+        // never let the target outline point outside the output tensor
+        if (this.isValid)
+            step = clamp(step, 0, outputTensor.width * outputTensor.height * outputTensor.depth - 1);
 
         // Create background trapezoid/frustum shape
         this.backgroundShape = new THREE.Mesh(
@@ -242,9 +261,10 @@ export class Conv2D extends THREE.Group {
         ]
 
         // Create filter/kernel tensor box
+        const palette = this.isValid ? colorPalettes[outZPos % colorPalettes.length] : colorPalettes[0];
         this.weightTensor = new Tensor({
             width: kernelSize, height: kernelSize, channels: inputTensor.channels,
-            colors: colorPalettes[outZPos % colorPalettes.length], borderColor: "#1E3A4B",
+            colors: palette, borderColor: "#1E3A4B",
             scaleMultiplier: 0.7
         });
         this.weightTensor.renderOrder = 0.5;
@@ -306,8 +326,7 @@ export class Conv2D extends THREE.Group {
 
         // Bias: one scalar per filter, drawn as a 1x1x1 cube added ("+") to
         // the current filter, below its bottom-right corner
-        const palette = colorPalettes[outZPos % colorPalettes.length];
-        if (bias && palette) {
+        if (bias) {
             const biasTensor = new Tensor({
                 width: 1, height: 1, channels: 1,
                 colors: [palette[0]], borderColor: "#1E3A4B",
@@ -348,51 +367,63 @@ export class Conv2D extends THREE.Group {
             this.weightTensor.add(filterLabel);
         }
 
-        // Input kernel outline
-        const physicalKernelSize = kernelSize + (kernelSize-1)*(dilation-1);
+        if (this.isValid) {
+            // Input kernel outline
+            const physicalKernelSize = kernelSize + (kernelSize-1)*(dilation-1);
 
-        const numberOfColumns = outputTensor.width;
-        const numberOfRows = outputTensor.height;
-        const inpXPos = (step % numberOfColumns) * stride;
-        const inpYPos = (Math.floor(step / numberOfColumns) % numberOfRows) * stride;
-        if (dilation > 1) {
-            this.inputTensorKernel = getDilatedCubeBox({
-                tensor: inputTensor,
-                // wSpan: [0 - padding, (kernelSize*dilation-1) - padding],
-                // hSpan: [0 - padding, (kernelSize*dilation-1) - padding],
-                wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
-                hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
-                cSpan: [0, inputTensor.channels],
-                dilation
+            const numberOfColumns = outputTensor.width;
+            const numberOfRows = outputTensor.height;
+            const inpXPos = (step % numberOfColumns) * stride;
+            const inpYPos = (Math.floor(step / numberOfColumns) % numberOfRows) * stride;
+            if (dilation > 1) {
+                this.inputTensorKernel = getDilatedCubeBox({
+                    tensor: inputTensor,
+                    // wSpan: [0 - padding, (kernelSize*dilation-1) - padding],
+                    // hSpan: [0 - padding, (kernelSize*dilation-1) - padding],
+                    wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
+                    hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
+                    cSpan: [0, inputTensor.channels],
+                    dilation
+                })
+            }
+            else {
+                this.inputTensorKernel = getCubeBox({
+                    tensor: inputTensor,
+                    wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
+                    hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
+                    cSpan: [0, inputTensor.channels]
+                })
+            }
+            inputTensor.add(this.inputTensorKernel);
+
+            // Self kernel outline
+            this.selfTensorKernel = getCubeBox({
+                tensor: this.weightTensor, wSpan: [0, this.weightTensor.width],
+                hSpan: [0, this.weightTensor.height], cSpan: [0, this.weightTensor.channels]
             })
+            this.weightTensor.add(this.selfTensorKernel);
+
+            // Output kernel outline
+            const outXPos = step % outputTensor.width;
+            const outYPos = Math.floor(step / outputTensor.width) % outputTensor.height;
+            this.outputTensorKernel = getCubeBox({
+                tensor: outputTensor,
+                wSpan: [outXPos, outXPos + 1],
+                hSpan: [outYPos, outYPos + 1],
+                cSpan: [outZPos, outZPos + 1]
+            })
+            outputTensor.add(this.outputTensorKernel);
         }
         else {
-            this.inputTensorKernel = getCubeBox({
-                tensor: inputTensor,
-                wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
-                hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
-                cSpan: [0, inputTensor.channels]
-            })
+            // Invisible degenerate outlines so the fields stay populated
+            // without introducing NaN geometry
+            this.inputTensorKernel = getBox({ w: 0, h: 0, d: 0 });
+            this.inputTensorKernel.visible = false;
+            this.selfTensorKernel = getBox({ w: 0, h: 0, d: 0 });
+            this.selfTensorKernel.visible = false;
+            this.outputTensorKernel = getBox({ w: 0, h: 0, d: 0 });
+            this.outputTensorKernel.visible = false;
         }
-        inputTensor.add(this.inputTensorKernel);
-
-        // Self kernel outline
-        this.selfTensorKernel = getCubeBox({
-            tensor: this.weightTensor, wSpan: [0, this.weightTensor.width],
-            hSpan: [0, this.weightTensor.height], cSpan: [0, this.weightTensor.channels]
-        })
-        this.weightTensor.add(this.selfTensorKernel);
-
-        // Output kernel outline
-        const outXPos = step % outputTensor.width;
-        const outYPos = Math.floor(step / outputTensor.width) % outputTensor.height;
-        this.outputTensorKernel = getCubeBox({
-            tensor: outputTensor,
-            wSpan: [outXPos, outXPos + 1],
-            hSpan: [outYPos, outYPos + 1],
-            cSpan: [outZPos, outZPos + 1]
-        })
-        outputTensor.add(this.outputTensorKernel);
 
         // Degenerate segment instead of [] to avoid a NaN bounding sphere
         let geometry = new LineSegmentsGeometry().setPositions([0, 0, 0, 0, 0, 0]);
@@ -410,7 +441,11 @@ export class Conv2D extends THREE.Group {
     }
 
     public update(scene: THREE.Object3D, camera: THREE.Camera) {
-        // return;
+        if (!this.isValid) {
+            scene.remove(this.connections);
+            return;
+        }
+
         let selfTensorKernelPoints = getBboxVertices(this.selfTensorKernel.geometry.boundingBox!)
         let inputTensorKernelPoints = getBboxVertices(this.inputTensorKernel.geometry.boundingBox!);
         let outputTensorKernelPoints = getBboxVertices(this.outputTensorKernel.geometry.boundingBox!);
@@ -449,9 +484,10 @@ export class Conv2D extends THREE.Group {
     }
 
     public assign(other: Conv2D) {
-        this.connections.parent!.remove(this.connections);
+        this.connections.parent?.remove(this.connections);
         this.connections.geometry.dispose();
 
+        this.isValid = other.isValid;
         this.inputTensor = other.inputTensor
         this.weightTensor = other.weightTensor
         this.outputTensor = other.outputTensor

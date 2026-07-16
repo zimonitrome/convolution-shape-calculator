@@ -23,7 +23,12 @@ const PlayButton = () => {
     function onClick() {
         setPlaying(!isPlaying());
         if (isPlaying() && interval == undefined) {
-            interval = window.setInterval(() => setStep((step() + 1) % (totalSteps())), 500);
+            interval = window.setInterval(() => {
+                // Don't advance while the output shape is invalid:
+                // (step + 1) % NaN would poison step with NaN
+                if (!Number.isFinite(totalSteps())) return;
+                setStep((step() + 1) % (totalSteps() + 1));
+            }, 500);
         }
         else {
             clearInterval(interval);
@@ -66,7 +71,8 @@ export default (props: any) => {
 
         setTotalSteps(outputHeight()*outputChannels()*outputWidth()-1);
 
-        if(step() > totalSteps()) {
+        // Negated comparison so a NaN step is also caught and reset
+        if (!(step() <= totalSteps())) {
             setStep(totalSteps());
         }
     });
