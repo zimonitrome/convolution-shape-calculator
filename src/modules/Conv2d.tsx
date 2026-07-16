@@ -25,14 +25,22 @@ const ParamsCount = () => {
         "font-family": "ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace",
         "font-size": "18pt",
         "opacity": 0.4,
-        "text-align": "center",
+        "text-align": "left",
         "white-space": "nowrap",
         "margin": "15px",
+        "align-self": "flex-start",
     }
+
+    const Term = (p: { value: number, name: string }) =>
+        <span title={p.name} style={{ "cursor": "help" }}>{p.value}</span>;
 
     return <Show when={Number.isFinite(total())}>
         <div style={style}>
-            params = {outputChannels()} × {inputChannels()} × {kernelSize()} × {kernelSize()}{bias() ? ` + ${outputChannels()}` : ""} = {total()}
+            params = <Term value={outputChannels()} name="output_channels" /> × <Term
+                value={inputChannels()} name="input_channels" /> × <Term
+                value={kernelSize()} name="kernel_size" /> × <Term
+                value={kernelSize()} name="kernel_size" />
+            <Show when={bias()}> + <Term value={outputChannels()} name="bias (one per filter)" /></Show> = {total()}
         </div>
     </Show>;
 }
