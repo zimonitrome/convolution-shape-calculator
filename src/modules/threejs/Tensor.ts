@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { isDark } from "../theme";
 import { dispose } from "./utils";
 
 function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", unitSize = 64) {
@@ -29,7 +30,7 @@ export function getTextSprite(text: string, position: [number, number, number], 
 
     var context = canvas.getContext('2d')!;
 
-    context.fillStyle = "rgba(0, 0, 0, 1.0)";
+    context.fillStyle = isDark() ? "#e8e8e8" : "rgba(0, 0, 0, 1.0)";
     context.font = `Bold ${textHeight}px ui-monospace,SFMono-Regular,SF Mono,Menlo,Consolas,Liberation Mono,monospace`;
     context.textAlign = "center";
     context.fillText(text, textWidth / 2, textHeight/1.2);

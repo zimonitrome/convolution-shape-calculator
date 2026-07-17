@@ -1,5 +1,7 @@
 import { createEffect, mergeProps, onMount } from 'solid-js';
 import * as THREE from "three";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { isDark } from './theme';
 import { outputWidth, outputHeight } from './OutputShape';
 import { bias, dilation, kernelSize, layerType, outputChannels, padding, stride } from './Conv2d';
 import { Tensor } from './threejs/Tensor';
@@ -201,6 +203,10 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
 
         createEffect(() => {
+            // The connections material survives rebuilds (update() reuses it),
+            // so its color has to be set directly on theme change
+            (conv.connections.material as LineMaterial).color.set(isDark() ? 0xcccccc : 0x000000);
+
             inputCube.assign(new Tensor({ ...props }));
 
             outputCube.assign(new Tensor({

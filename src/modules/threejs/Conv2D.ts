@@ -3,6 +3,7 @@ import { Tensor, getTextSprite } from "./Tensor";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { isDark } from "../theme";
 import { clamp, dispose, getBboxVertecies as getBboxVertices, world3DToCanvas2D } from "./utils";
 
 function getFrustumGeometry(raidusTop: number, radiusBottom: number) {
@@ -70,7 +71,7 @@ function getBox({ w = 1, h = 1, d = 1, linewidth = 0.002 }) {
     lines.setColors(borderColors);
     const element = document.getElementById("long")!;
     var mat = new LineMaterial({
-        color: new THREE.Color(0x000000).getHex(),
+        color: new THREE.Color(isDark() ? 0xcccccc : 0x000000).getHex(),
         linewidth: linewidth,
         vertexColors: true,
         worldUnits: false,
@@ -179,7 +180,7 @@ function getDilatedCubeBox({ tensor = new Tensor({}), wSpan = [0, 1], hSpan = [0
     lines.setColors(borderColors);
     const element = document.getElementById("long")!;
     var mat = new LineMaterial({
-        color: new THREE.Color(0x000000).getHex(),
+        color: new THREE.Color(isDark() ? 0xcccccc : 0x000000).getHex(),
         linewidth: 0.002,
         vertexColors: true,
         worldUnits: false,
@@ -453,7 +454,7 @@ export class Conv2D extends THREE.Group {
         this.connections = new THREE.Mesh(
             geometry,
             new LineMaterial({
-                color: 0x000000,
+                color: isDark() ? 0xcccccc : 0x000000,
                 linewidth: 0.005,
                 depthTest: false,
                 // LineMaterial's default resolution changed from (1,1) to (0,0)
