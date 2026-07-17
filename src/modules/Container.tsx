@@ -1,4 +1,4 @@
-export default (props: any) => <div style={{
+export default (props: any) => <div id={props.id} style={{
     "outline": "1px solid #888",
     "border-radius": "0.75ch",
     // "padding": "15px",

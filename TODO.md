@@ -10,8 +10,8 @@
    - [x] Deconv
 - [x] Add bias
 - [x] List number of parameters in layer
-- [ ] Shrink page height
-    - [ ] Depend shape placement and canvas height on div heights (inputshape div, conv div, outputshape div) https://github.com/zimonitrome/convolution-shape-calculator/blob/main/src/modules/ThreeCanvas.tsx#L48
+- [x] Shrink page height
+    - [x] Depend shape placement and canvas height on div heights (inputshape div, conv div, outputshape div) https://github.com/zimonitrome/convolution-shape-calculator/blob/main/src/modules/ThreeCanvas.tsx#L48
     - [x] Make arrow smaller/overlap
 - [x]  Animate
     - [x]  Calculate number of steps for each conv configuration

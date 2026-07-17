@@ -50,7 +50,7 @@ const ParamsCount = () => {
 }
 
 export default (props: any) => {
-    return <Container>
+    return <Container id="convContainer">
         <div style={{ "display": "flex", "flex-direction": "column", "flex-grow": 1 }}>
         <CodeParamGroup>
             {[
@@ -70,6 +70,6 @@ export default (props: any) => {
         </CodeParamGroup>
         <ParamsCount />
         </div>
-        <div style={{ "min-width": "550px", "min-height": "400px" }} />
+        <div style={{ "min-width": "550px", "min-height": "300px" }} />
     </Container>
 }

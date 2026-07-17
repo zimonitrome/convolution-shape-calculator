@@ -19,7 +19,7 @@ export default (props: any) => {
         }).observe(root);
     });
 
-    return <Container>
+    return <Container id="inputContainer">
         <CodeParamGroup>
             input.shape = (
             <CodeParam text="channels" min={1} max={1024} scaling={"pow2"} signal={[inputChannels, setinputChannels]} />
@@ -27,7 +27,7 @@ export default (props: any) => {
             <CodeParam text="width" min={1} max={1024} scaling={"pow2"} signal={[inputWidth, setInputWidth]} />
             )
         </CodeParamGroup>
-        <div style={{ "min-width": "550px", "min-height": "400px" }}>
+        <div id="canvasColumn" style={{ "min-width": "550px", "min-height": "300px" }}>
             <div id="long" style={{ "position": "absolute", "min-width": "550px" }}>
                 <ThreeCanvas channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} />
             </div>

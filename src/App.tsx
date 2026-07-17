@@ -17,7 +17,7 @@ const App: Component = () => {
     <TopBar />
     <div id="App">
       <TimelineControl />
-      <div>
+      <div id="pipeline">
         <InputShape />
         <DownArrow />
         <Conv2d />

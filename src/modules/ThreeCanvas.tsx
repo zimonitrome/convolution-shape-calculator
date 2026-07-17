@@ -50,27 +50,35 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
         camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-        const updateCanvas = async () => {
-            // WOW THIS IS A HACK
-            const mainContainerDiv = elem!.parentElement!.parentElement!;
-            const inputConvOutputDiv = elem!.parentElement!.parentElement!.parentElement!.parentElement!;
+        const updateCanvas = () => {
+            const canvasColumn = document.getElementById("canvasColumn")!;
+            const pipeline = document.getElementById("pipeline")!;
 
-            if (renderer.getSize(new THREE.Vector2()).equals(new THREE.Vector2(mainContainerDiv.clientWidth, inputConvOutputDiv.clientHeight))) {
-                return;
+            let width = canvasColumn.clientWidth;
+            let height = pipeline.clientHeight;
+
+            if (!renderer.getSize(new THREE.Vector2()).equals(new THREE.Vector2(width, height))) {
+                let aspect = width / height;
+
+                camera.left = -d * aspect;
+                camera.right = d * aspect;
+                camera.top = d;
+                camera.bottom = -d;
+                camera.updateProjectionMatrix();
+
+                renderer.setSize(width, height);
             }
 
-            let width = mainContainerDiv.clientWidth;
-            let height = inputConvOutputDiv.clientHeight;
-            console.log(width, height);
-            let aspect = width / height;
-
-            camera.left = -d * aspect;
-            camera.right = d * aspect;
-            camera.top = d;
-            camera.bottom = -d;
-            camera.updateProjectionMatrix();
-
-            renderer.setSize(width, height);
+            // Place each shape at the vertical center of its row div,
+            // measured in canvas pixels and unprojected into the scene
+            const canvasRect = canvas.getBoundingClientRect();
+            const rowCenter = (id: string) => {
+                const rect = document.getElementById(id)!.getBoundingClientRect();
+                return canvas2DToWorld3D(canvas.width / 2, rect.top + rect.height / 2 - canvasRect.top, camera, canvas);
+            };
+            inputCube.position.copy(rowCenter("inputContainer"));
+            conv.position.copy(rowCenter("convContainer"));
+            outputCube.position.copy(rowCenter("outputContainer"));
         }
 
         let inputCube = new Tensor({});
@@ -171,6 +179,16 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         dirLight.position.set(12, 18, 15);
         scene.add(dirLight);
 
+        let universalAngle: [number, number, number] = [toRadians(10), toRadians(25), 0];
+
+        inputCube.scale.set(0.3, 0.3, 0.3);
+        inputCube.rotation.set(...universalAngle);
+
+        outputCube.scale.set(0.3, 0.3, 0.3);
+        outputCube.rotation.set(...universalAngle);
+
+        conv.rotation.set(...universalAngle);
+
         function animate() {
             updateCanvas();
 
@@ -180,26 +198,6 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             renderer.render(scene, camera);
         }
         animate();
-
-        let pos;
-        let universalAngle: [number, number, number] = [toRadians(10), toRadians(25), 0];
-
-        // // TRANSFORMING TODO: MOVE!!!!
-        const containerHeight = 400;
-        const containerPadding = 23;
-        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight * 2 + containerPadding * 2 + containerHeight / 2, camera, canvas);
-        outputCube.position.set(pos.x, pos.y, pos.z);
-        outputCube.scale.set(0.3, 0.3, 0.3);
-        outputCube.rotation.set(...universalAngle);
-
-        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight / 2, camera, canvas);
-        inputCube.position.set(pos.x, pos.y, pos.z);
-        inputCube.scale.set(0.3, 0.3, 0.3);
-        inputCube.rotation.set(...universalAngle);
-
-        pos = canvas2DToWorld3D(canvas.width / 2, containerHeight + containerPadding + containerHeight / 2, camera, canvas);
-        conv.position.set(pos.x, pos.y, pos.z);
-        conv.rotation.set(...universalAngle);
 
 
         createEffect(() => {

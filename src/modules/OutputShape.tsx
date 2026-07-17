@@ -23,7 +23,7 @@ export default (props: any) => {
         setOutputWidth(outWidth > 0 ? outWidth : NaN);
     })
 
-    return <Container>
+    return <Container id="outputContainer">
         <CodeParamGroup>
             output.shape = (
             <CodeParamReadOnly text="channels" value={outputChannels()} />
@@ -31,6 +31,6 @@ export default (props: any) => {
             <CodeParamReadOnly text="width" value={outputWidth()} />
             )
         </CodeParamGroup>
-        <div style={{ "min-width": "550px", "min-height": "400px" }} />
+        <div style={{ "min-width": "550px", "min-height": "300px" }} />
     </Container>
 }
