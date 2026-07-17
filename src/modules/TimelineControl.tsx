@@ -1,6 +1,14 @@
 import { createEffect, createSignal, For, JSX } from "solid-js";
-import { outputChannels } from "./Conv2d";
+import { layerType, outputChannels } from "./Conv2d";
+import { inputHeight, inputWidth } from "./InputShape";
 import { outputHeight, outputWidth } from "./OutputShape";
+
+// Conv2d visits every output position once per filter; ConvTranspose2d
+// visits every input position once per filter
+const stepsPerFilter = () =>
+    layerType() === "ConvTranspose2d"
+        ? inputWidth() * inputHeight()
+        : outputWidth() * outputHeight();
 
 export const [step, setStep] = createSignal(0);
 export const [totalSteps, setTotalSteps] = createSignal(1);
@@ -46,10 +54,9 @@ const PlayButton = () => {
 export default (props: any) => {
     // One tick per filter, at the step where that filter starts
     const filterStartSteps = () => {
-        const stepsPerFilter = outputWidth() * outputHeight();
-        if (!Number.isFinite(stepsPerFilter) || !Number.isFinite(outputChannels()))
+        if (!Number.isFinite(stepsPerFilter()) || !Number.isFinite(outputChannels()))
             return [];
-        return Array.from({ length: outputChannels() }, (_, k) => k * stepsPerFilter);
+        return Array.from({ length: outputChannels() }, (_, k) => k * stepsPerFilter());
     };
 
     const outerContainerStyle: JSX.CSSProperties = {
@@ -63,13 +70,14 @@ export default (props: any) => {
     }
     
     createEffect(()=>{
-        if ([outputHeight(), outputChannels(), outputWidth()].some(isNaN)) {
+        // The output dims must be valid in both modes for anything to render
+        if ([outputHeight(), outputChannels(), outputWidth(), stepsPerFilter()].some(isNaN)) {
             setTotalSteps(NaN);
             setStep(0);
             return;
         }
 
-        setTotalSteps(outputHeight()*outputChannels()*outputWidth()-1);
+        setTotalSteps(stepsPerFilter()*outputChannels()-1);
 
         // Negated comparison so a NaN step is also caught and reset
         if (!(step() <= totalSteps())) {

@@ -1,7 +1,7 @@
 import { createEffect, mergeProps, onMount } from 'solid-js';
 import * as THREE from "three";
 import { outputWidth, outputHeight } from './OutputShape';
-import { bias, dilation, kernelSize, outputChannels, padding, stride } from './Conv2d';
+import { bias, dilation, kernelSize, layerType, outputChannels, padding, stride } from './Conv2d';
 import { Tensor } from './threejs/Tensor';
 import { canvas2DToWorld3D, clamp, getBboxVertecies, rotateAboutPoint, toRadians } from './threejs/utils';
 import { Conv2D } from './threejs/Conv2D';
@@ -211,7 +211,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             conv.assign(new Conv2D({
                 inputTensor: inputCube, outputTensor: outputCube,
                 kernelSize: kernelSize(), stride: stride(), padding: padding(), dilation: dilation(),
-                bias: bias(), step: step()
+                bias: bias(), transposed: layerType() === "ConvTranspose2d", step: step()
             }));
             conv.update(scene, camera);
         });

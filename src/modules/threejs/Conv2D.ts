@@ -214,7 +214,8 @@ export class Conv2D extends THREE.Group {
 
     constructor({
         inputTensor = new Tensor({}), outputTensor = new Tensor({}),
-        kernelSize = 3, stride = 2, padding = 0, dilation = 1, bias = true, step = 0
+        kernelSize = 3, stride = 2, padding = 0, dilation = 1, bias = true,
+        transposed = false, step = 0
     }) {
         super();
 
@@ -229,14 +230,20 @@ export class Conv2D extends THREE.Group {
         this.isValid = [inputTensor, outputTensor].every(t => t.width > 0 && t.height > 0 && t.depth > 0)
             && [kernelSize, stride, padding, dilation, step].every(Number.isFinite);
 
-        // The timeline step can briefly outlive a shrunken output shape;
-        // never let the target outline point outside the output tensor
-        if (this.isValid)
-            step = clamp(step, 0, outputTensor.width * outputTensor.height * outputTensor.depth - 1);
+        // Conv2d steps over output positions, ConvTranspose2d over input
+        // positions (each input pixel stamps a kernel onto the output)
+        const gridW = transposed ? inputTensor.width : outputTensor.width;
+        const gridH = transposed ? inputTensor.height : outputTensor.height;
 
-        // Create background trapezoid/frustum shape
+        // The timeline step can briefly outlive a shrunken shape; never let
+        // the target outline point outside the tensors
+        if (this.isValid)
+            step = clamp(step, 0, gridW * gridH * outputTensor.depth - 1);
+
+        // Create background trapezoid/frustum shape; conv narrows from many
+        // input cells to one output cell, transposed conv widens
         this.backgroundShape = new THREE.Mesh(
-            getFrustumGeometry(1, 0.7),
+            transposed ? getFrustumGeometry(0.7, 1) : getFrustumGeometry(1, 0.7),
             new THREE.MeshStandardMaterial({
                 color: new THREE.Color("hsl(0, 100%, 70%)"),
                 // opacity: 0.6,
@@ -252,7 +259,7 @@ export class Conv2D extends THREE.Group {
         this.backgroundShape.renderOrder = 0;
         this.add(this.backgroundShape);
 
-        const outZPos = Math.floor(step / (outputTensor.width * outputTensor.height));
+        const outZPos = Math.floor(step / (gridW * gridH));
         const colorPalettes = [
             ["#E22030", "#00AEAC", "#136371", "#F2B995"],
             ["#705A5E", "#058ED9", "#F4EBD9", "#A39A92"],
@@ -368,33 +375,60 @@ export class Conv2D extends THREE.Group {
         }
 
         if (this.isValid) {
-            // Input kernel outline
             const physicalKernelSize = kernelSize + (kernelSize-1)*(dilation-1);
+            const gridX = step % gridW;
+            const gridY = Math.floor(step / gridW) % gridH;
 
-            const numberOfColumns = outputTensor.width;
-            const numberOfRows = outputTensor.height;
-            const inpXPos = (step % numberOfColumns) * stride;
-            const inpYPos = (Math.floor(step / numberOfColumns) % numberOfRows) * stride;
-            if (dilation > 1) {
-                this.inputTensorKernel = getDilatedCubeBox({
-                    tensor: inputTensor,
-                    // wSpan: [0 - padding, (kernelSize*dilation-1) - padding],
-                    // hSpan: [0 - padding, (kernelSize*dilation-1) - padding],
-                    wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
-                    hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
-                    cSpan: [0, inputTensor.channels],
-                    dilation
-                })
-            }
-            else {
+            // A kernel-sized (dilation-aware) outline over a tensor
+            const kernelBox = (tensor: Tensor, x: number, y: number, cSpan: [number, number]) =>
+                dilation > 1
+                    ? getDilatedCubeBox({
+                        tensor,
+                        wSpan: [x, x + physicalKernelSize],
+                        hSpan: [y, y + physicalKernelSize],
+                        cSpan,
+                        dilation
+                    })
+                    : getCubeBox({
+                        tensor,
+                        wSpan: [x, x + physicalKernelSize],
+                        hSpan: [y, y + physicalKernelSize],
+                        cSpan
+                    });
+
+            if (transposed) {
+                // One input position spreads over a kernel-sized output
+                // region, top-left at gridX*stride - padding
                 this.inputTensorKernel = getCubeBox({
                     tensor: inputTensor,
-                    wSpan: [inpXPos - padding, inpXPos + physicalKernelSize - padding],
-                    hSpan: [inpYPos - padding, inpYPos + physicalKernelSize - padding],
+                    wSpan: [gridX, gridX + 1],
+                    hSpan: [gridY, gridY + 1],
                     cSpan: [0, inputTensor.channels]
-                })
+                });
+                this.outputTensorKernel = kernelBox(
+                    outputTensor,
+                    gridX * stride - padding,
+                    gridY * stride - padding,
+                    [outZPos, outZPos + 1]
+                );
+            }
+            else {
+                // A kernel-sized input region reduces to one output position
+                this.inputTensorKernel = kernelBox(
+                    inputTensor,
+                    gridX * stride - padding,
+                    gridY * stride - padding,
+                    [0, inputTensor.channels]
+                );
+                this.outputTensorKernel = getCubeBox({
+                    tensor: outputTensor,
+                    wSpan: [gridX, gridX + 1],
+                    hSpan: [gridY, gridY + 1],
+                    cSpan: [outZPos, outZPos + 1]
+                });
             }
             inputTensor.add(this.inputTensorKernel);
+            outputTensor.add(this.outputTensorKernel);
 
             // Self kernel outline
             this.selfTensorKernel = getCubeBox({
@@ -402,17 +436,6 @@ export class Conv2D extends THREE.Group {
                 hSpan: [0, this.weightTensor.height], cSpan: [0, this.weightTensor.channels]
             })
             this.weightTensor.add(this.selfTensorKernel);
-
-            // Output kernel outline
-            const outXPos = step % outputTensor.width;
-            const outYPos = Math.floor(step / outputTensor.width) % outputTensor.height;
-            this.outputTensorKernel = getCubeBox({
-                tensor: outputTensor,
-                wSpan: [outXPos, outXPos + 1],
-                hSpan: [outYPos, outYPos + 1],
-                cSpan: [outZPos, outZPos + 1]
-            })
-            outputTensor.add(this.outputTensorKernel);
         }
         else {
             // Invisible degenerate outlines so the fields stay populated
