@@ -5,6 +5,7 @@ import { LineSegmentsGeometry } from "three/addons/lines/LineSegmentsGeometry.js
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { isDark } from "../theme";
 import { clamp, dispose, getBboxVertecies as getBboxVertices, world3DToCanvas2D } from "./utils";
+import type { VolumeOverlay } from "../convViz";
 
 function getFrustumGeometry(raidusTop: number, radiusBottom: number) {
     let preGeometry = new THREE.CylinderGeometry(raidusTop / Math.sqrt(2), radiusBottom / Math.sqrt(2), 1, 4, 1); // size of top can be changed
@@ -216,7 +217,8 @@ export class Conv2D extends THREE.Group {
     constructor({
         inputTensor = new Tensor({}), outputTensor = new Tensor({}),
         kernelSize = 3, stride = 2, padding = 0, dilation = 1, bias = true,
-        transposed = false, step = 0
+        transposed = false, step = 0,
+        weightOverlayFor = undefined as ((filterIdx: number) => VolumeOverlay | undefined) | undefined
     }) {
         super();
 
@@ -273,7 +275,8 @@ export class Conv2D extends THREE.Group {
         this.weightTensor = new Tensor({
             width: kernelSize, height: kernelSize, channels: inputTensor.channels,
             colors: palette, borderColor: isDark() ? "#c9d9e2" : "#1E3A4B",
-            scaleMultiplier: 0.7
+            scaleMultiplier: 0.7,
+            overlay: weightOverlayFor?.(outZPos)
         });
         this.weightTensor.renderOrder = 0.5;
         this.add(this.weightTensor);
@@ -292,7 +295,8 @@ export class Conv2D extends THREE.Group {
             const ghost = new Tensor({
                 width: kernelSize, height: kernelSize, channels: inputTensor.channels,
                 colors: colorPalettes[filterIdx % colorPalettes.length], borderColor: isDark() ? "#c9d9e2" : "#1E3A4B",
-                scaleMultiplier: 0.7
+                scaleMultiplier: 0.7,
+                overlay: weightOverlayFor?.(filterIdx)
             });
             // No w/h/c hover labels on ghosts
             ghost.remove(...ghost.labels);

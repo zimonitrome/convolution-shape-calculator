@@ -1,5 +1,6 @@
 import { JSX } from "solid-js";
 import { layerType, setLayerType, LayerType } from "./Conv2d";
+import { ImagePicker } from "./ImageInput";
 import { isDark, setTheme } from "./theme";
 
 const controlStyle: JSX.CSSProperties = {
@@ -32,6 +33,7 @@ export default () => {
     return <div style={barStyle}>
         <span>Convolution Shape Calculator</span>
         <div style={{ "display": "flex", "align-items": "center", "gap": "15px" }}>
+            <ImagePicker controlStyle={controlStyle} />
             <label>
                 <span style={{ "opacity": 0.4 }}>layer: </span>
                 <select
