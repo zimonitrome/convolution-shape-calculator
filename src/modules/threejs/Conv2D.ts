@@ -272,7 +272,7 @@ export class Conv2D extends THREE.Group {
         const palette = this.isValid ? colorPalettes[outZPos % colorPalettes.length] : colorPalettes[0];
         this.weightTensor = new Tensor({
             width: kernelSize, height: kernelSize, channels: inputTensor.channels,
-            colors: palette, borderColor: "#1E3A4B",
+            colors: palette, borderColor: isDark() ? "#c9d9e2" : "#1E3A4B",
             scaleMultiplier: 0.7
         });
         this.weightTensor.renderOrder = 0.5;
@@ -291,7 +291,7 @@ export class Conv2D extends THREE.Group {
 
             const ghost = new Tensor({
                 width: kernelSize, height: kernelSize, channels: inputTensor.channels,
-                colors: colorPalettes[filterIdx % colorPalettes.length], borderColor: "#1E3A4B",
+                colors: colorPalettes[filterIdx % colorPalettes.length], borderColor: isDark() ? "#c9d9e2" : "#1E3A4B",
                 scaleMultiplier: 0.7
             });
             // No w/h/c hover labels on ghosts
@@ -337,7 +337,7 @@ export class Conv2D extends THREE.Group {
         if (bias) {
             const biasTensor = new Tensor({
                 width: 1, height: 1, channels: 1,
-                colors: [palette[0]], borderColor: "#1E3A4B",
+                colors: [palette[0]], borderColor: isDark() ? "#c9d9e2" : "#1E3A4B",
                 scaleMultiplier: 0.7
             });
             const kernelHalfH = this.weightTensor.boxHeight / 2;

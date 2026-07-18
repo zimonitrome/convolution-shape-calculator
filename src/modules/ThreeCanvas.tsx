@@ -19,7 +19,7 @@ interface Cube3DProps {
 }
 
 export const ThreeCanvas = (inProps: Cube3DProps) => {
-    const props = mergeProps({ colors: ['#FCBF49'], borderColor: "#003049" }, inProps)
+    const props = mergeProps({ colors: ['#FCBF49'], get borderColor() { return isDark() ? "#bcd7e6" : "#003049" } }, inProps)
 
     let elem: HTMLDivElement | undefined = undefined;
 
@@ -137,9 +137,11 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
         // Hover objects
         const raycaster = new THREE.Raycaster();
         let hoveredTensors: Array<Tensor> = [];
-        function onHover(e: Event, x: number, y: number) {
+        let lastPointer: { x: number, y: number } | null = null;
+        function onHover(x: number, y: number) {
+            lastPointer = { x, y };
             // Fix element offset
-            let rect = (e.target as HTMLElement).getBoundingClientRect();
+            let rect = canvas.getBoundingClientRect();
             raycaster.setFromCamera(new THREE.Vector2(
                 ((x - rect.left) / canvas.width) * 2 - 1,
                 - ((y - rect.top) / canvas.height) * 2 + 1
@@ -167,8 +169,8 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             return intersects.length > 0;
         }
 
-        canvas.addEventListener('pointermove', e => onHover(e, e.clientX, e.clientY));
-        canvas.addEventListener('touchstart', e => onHover(e, e.touches[0].clientX, e.touches[0].clientY));
+        canvas.addEventListener('pointermove', e => onHover(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', e => onHover(e.touches[0].clientX, e.touches[0].clientY));
 
 
         // Intensities scaled by PI to match the legacy (pre-r155) lighting mode
@@ -209,7 +211,7 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
 
             outputCube.assign(new Tensor({
                 width: outputWidth(), height: outputHeight(), channels: outputChannels(),
-                colors: ['#aaaacc', '#6677aa', '#ccddff', '#445577'], borderColor: "#223344"
+                colors: ['#aaaacc', '#6677aa', '#ccddff', '#445577'], borderColor: isDark() ? "#c8d4e0" : "#223344"
             }));
 
             conv.assign(new Conv2D({
@@ -218,6 +220,14 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
                 bias: bias(), transposed: layerType() === "ConvTranspose2d", step: step()
             }));
             conv.update(scene, camera);
+
+            // Rebuilding replaced the label sprites, which start hidden; re-run
+            // the hover raycast at the last cursor position so labels survive
+            // timeline steps without the mouse having to move
+            if (lastPointer) {
+                scene.updateMatrixWorld();
+                onHover(lastPointer.x, lastPointer.y);
+            }
         });
     })
 

@@ -29,7 +29,7 @@ export default (props: any) => {
         </CodeParamGroup>
         <div id="canvasColumn" style={{ "min-width": "550px", "min-height": "300px" }}>
             <div id="long" style={{ "position": "absolute", "min-width": "550px" }}>
-                <ThreeCanvas channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} borderColor={"#003049"} />
+                <ThreeCanvas channels={inputChannels()} height={inputHeight()} width={inputWidth()} colors={['#FCBF49', '#F77F00', '#EAE2B7', '#D62828']} />
             </div>
         </div>
     </Container>

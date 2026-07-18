@@ -70,6 +70,16 @@ export class Tensor extends THREE.Group {
         this.width = width;
         this.channels = channels;
 
+        // Dark mode: deepen the pixel colors (and mute them a bit) so the
+        // light grid lines stay readable against every palette
+        if (isDark()) {
+            colors = colors.map(c => {
+                const hsl = { h: 0, s: 0, l: 0 };
+                new THREE.Color(c).getHSL(hsl);
+                return "#" + new THREE.Color().setHSL(hsl.h, hsl.s * 0.9, 0.22 + hsl.l * 0.42).getHexString();
+            });
+        }
+
         // Calculate spatial dimensions of the box
         const heightSpatial = height == 1 ? 0.35 : Math.log(height);
         const widthSpatial = width == 1 ? 0.35 : Math.log(width);
