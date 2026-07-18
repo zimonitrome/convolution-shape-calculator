@@ -1,4 +1,4 @@
-import { createEffect, createMemo, mergeProps, onMount } from 'solid-js';
+import { createEffect, mergeProps, onMount } from 'solid-js';
 import * as THREE from "three";
 import { LineMaterial } from "three/addons/lines/LineMaterial.js";
 import { isDark } from './theme';
@@ -8,13 +8,6 @@ import { Tensor } from './threejs/Tensor';
 import { canvas2DToWorld3D, clamp, getBboxVertecies, rotateAboutPoint, toRadians } from './threejs/utils';
 import { Conv2D } from './threejs/Conv2D';
 import { step } from './TimelineControl';
-import { sourceImage } from './ImageInput';
-import { imageVolumeOverlay, outputVolumeOverlay, resizeBicubic, weightVolumeOverlay, type VolumeOverlay } from './convViz';
-
-// Beyond these sizes the per-pixel overlays are skipped and the tensors fall
-// back to their plain tile texture (the shape math is unaffected)
-const MAX_OVERLAY_CELLS = 1_200_000;
-const MAX_CONV_OPS = 60_000_000;
 
 
 interface Cube3DProps {
@@ -29,43 +22,6 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
     const props = mergeProps({ colors: ['#FCBF49'], borderColor: "#003049" }, inProps)
 
     let elem: HTMLDivElement | undefined = undefined;
-
-    // Source image bicubically resampled to the input tensor's spatial size
-    const inputPlanes = createMemo(() => {
-        const img = sourceImage();
-        const W = props.width, H = props.height;
-        if (!img || !(W > 0) || !(H > 0) || W * H > MAX_OVERLAY_CELLS) return undefined;
-        return resizeBicubic(img, W, H);
-    });
-
-    const inputOverlay = createMemo<VolumeOverlay | undefined>(() => {
-        const planes = inputPlanes();
-        if (!planes || props.channels * Math.max(planes.width, planes.height) > MAX_OVERLAY_CELLS)
-            return undefined;
-        return imageVolumeOverlay(planes, props.channels);
-    });
-
-    // The whole layer applied to the resized image: output channel z shows
-    // filter z's response, independent of the timeline position
-    const outputOverlay = createMemo<VolumeOverlay | undefined>(() => {
-        const planes = inputPlanes();
-        const k = kernelSize(), s = stride(), p = padding(), d = dilation();
-        const outW = outputWidth(), outH = outputHeight(), outC = outputChannels();
-        if (!planes || ![k, s, p, d, outW, outH, outC].every(Number.isFinite)) return undefined;
-        if (k < 1 || s < 1 || d < 1 || p < 0 || outW < 1 || outH < 1 || outC < 1) return undefined;
-        if (outW * outH > MAX_OVERLAY_CELLS || outC * Math.max(outW, outH) > MAX_OVERLAY_CELLS)
-            return undefined;
-
-        // Only the boundary faces are evaluated: two full W×H maps plus the
-        // four side slices across all channels
-        const texels = 2 * outW * outH + 2 * outC * (outW + outH);
-        if (texels * k * k * 3 > MAX_CONV_OPS) return undefined;
-
-        return outputVolumeOverlay(
-            planes, props.channels, outC, k, s, p, d,
-            layerType() === "ConvTranspose2d", outW, outH
-        );
-    });
 
     onMount(() => {
         const width = 550;
@@ -249,22 +205,17 @@ export const ThreeCanvas = (inProps: Cube3DProps) => {
             // so its color has to be set directly on theme change
             (conv.connections.material as LineMaterial).color.set(isDark() ? 0xcccccc : 0x000000);
 
-            inputCube.assign(new Tensor({ ...props, overlay: inputOverlay() }));
+            inputCube.assign(new Tensor({ ...props }));
 
             outputCube.assign(new Tensor({
                 width: outputWidth(), height: outputHeight(), channels: outputChannels(),
-                colors: ['#aaaacc', '#6677aa', '#ccddff', '#445577'], borderColor: "#223344",
-                overlay: outputOverlay()
+                colors: ['#aaaacc', '#6677aa', '#ccddff', '#445577'], borderColor: "#223344"
             }));
 
             conv.assign(new Conv2D({
                 inputTensor: inputCube, outputTensor: outputCube,
                 kernelSize: kernelSize(), stride: stride(), padding: padding(), dilation: dilation(),
-                bias: bias(), transposed: layerType() === "ConvTranspose2d", step: step(),
-                // Weight overlays are tied to the image toggle so "none"
-                // restores the plain look everywhere
-                weightOverlayFor: sourceImage() === undefined ? undefined
-                    : filterIdx => weightVolumeOverlay(filterIdx, kernelSize(), props.channels)
+                bias: bias(), transposed: layerType() === "ConvTranspose2d", step: step()
             }));
             conv.update(scene, camera);
         });

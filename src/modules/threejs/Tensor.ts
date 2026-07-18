@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { isDark } from "../theme";
 import { dispose } from "./utils";
-import type { VolumeOverlay } from "../convViz";
 
 function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", unitSize = 64) {
     const n_colors = hexColors.length;
@@ -18,57 +17,6 @@ function getCanvasTexture(hexColors: Array<string>, borderColor = "#000000", uni
         ctx.fillRect(i * unitSize + 1, 1, unitSize - 2, unitSize - 2);
     })
     return new THREE.CanvasTexture(canvas);
-}
-
-// Full-face texture with one cell per data element. `cellFn(u, v)` supplies
-// each cell's palette color and brightness, with u running along the
-// texture's x axis and v downward from the top row (uv.y = 1).
-function getGridTexture(
-    cellsU: number, cellsV: number,
-    cellFn: (u: number, v: number) => { color: THREE.Color; value: number },
-    borderColor: string
-) {
-    const small = document.createElement("canvas");
-    small.width = cellsU;
-    small.height = cellsV;
-    const smallCtx = small.getContext("2d")!;
-    const img = smallCtx.createImageData(cellsU, cellsV);
-    for (let v = 0; v < cellsV; v++) {
-        for (let u = 0; u < cellsU; u++) {
-            const { color, value } = cellFn(u, v);
-            // Brightness floor so the cell hue stays readable on black pixels
-            const m = 0.08 + 0.92 * Math.min(1, Math.max(0, value));
-            const i = (v * cellsU + u) * 4;
-            img.data[i] = color.r * m * 255;
-            img.data[i + 1] = color.g * m * 255;
-            img.data[i + 2] = color.b * m * 255;
-            img.data[i + 3] = 255;
-        }
-    }
-    smallCtx.putImageData(img, 0, 0);
-
-    // Upscale to give cells some size, capped so big tensors don't produce
-    // gigantic canvases
-    const cell = Math.max(1, Math.min(32, Math.floor(2048 / Math.max(cellsU, cellsV))));
-    const canvas = document.createElement("canvas");
-    canvas.width = cellsU * cell;
-    canvas.height = cellsV * cell;
-    const ctx = canvas.getContext("2d")!;
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(small, 0, 0, canvas.width, canvas.height);
-
-    // Cell borders like the plain tile texture, skipped when cells are too
-    // small for a border to read
-    if (cell >= 6) {
-        ctx.fillStyle = borderColor;
-        for (let x = 0; x <= cellsU; x++) ctx.fillRect(x * cell - 1, 0, 2, canvas.height);
-        for (let y = 0; y <= cellsV; y++) ctx.fillRect(0, y * cell - 1, canvas.width, 2);
-    }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.anisotropy = 16;
-    if (cell <= 2) texture.magFilter = THREE.NearestFilter;
-    return texture;
 }
 
 export function getTextSprite(text: string, position: [number, number, number], fontsize = 24, scale = 0.12, anchor: [number, number] = [0.5, 0.5]) {
@@ -109,7 +57,7 @@ export class Tensor extends THREE.Group {
     public boxMesh: THREE.Mesh = new THREE.Mesh();
     public labels: Array<THREE.Sprite> = [];
 
-    constructor({ width = 1, height = 1, channels = 1, colors = ["#ffffff"], borderColor = "#000000",  scaleMultiplier = 1, overlay = undefined as VolumeOverlay | undefined }) {
+    constructor({ width = 1, height = 1, channels = 1, colors = ["#ffffff"], borderColor = "#000000",  scaleMultiplier = 1}) {
         super();
 
         if ([width, height, channels].some(val => !val)) {
@@ -151,46 +99,9 @@ export class Tensor extends THREE.Group {
         textureSide.anisotropy = 16;
         textureFront.anisotropy = 16;
         textureBack.anisotropy = 16;
-        // Per-face data textures when a volume overlay matching this tensor's
-        // shape is supplied. Cell lookups bake in the UV orientation of each
-        // BoxGeometry face (u along texture x, v downward from uv.y = 1):
-        // right u: front→back, left u: back→front, top v: back→front,
-        // bottom v: front→back, back u: mirrored x.
-        const W = this.width, H = this.height, C = this.channels;
-        const useOverlay = overlay !== undefined
-            && overlay.width === W && overlay.height === H && overlay.channels === C;
-        const channelColor = (c: number) => new THREE.Color(colors[c % nColors]);
-        const overlayTexture = (i: number, o: VolumeOverlay) => {
-            switch (i) {
-                case 0: // Right
-                    return getGridTexture(C, H, (u, v) =>
-                        ({ color: channelColor(u), value: o.right[v * C + u] }), borderColor);
-                case 1: // Left
-                    return getGridTexture(C, H, (u, v) =>
-                        ({ color: channelColor(C - 1 - u), value: o.left[v * C + (C - 1 - u)] }), borderColor);
-                case 2: // Top
-                    return getGridTexture(W, C, (u, v) =>
-                        ({ color: channelColor(C - 1 - v), value: o.top[(C - 1 - v) * W + u] }), borderColor);
-                case 3: // Bottom
-                    return getGridTexture(W, C, (u, v) =>
-                        ({ color: channelColor(v), value: o.bottom[v * W + u] }), borderColor);
-                case 4: // Front
-                    return getGridTexture(W, H, (u, v) =>
-                        ({ color: channelColor(0), value: o.front[v * W + u] }), borderColor);
-                default: // Back
-                    return getGridTexture(W, H, (u, v) =>
-                        ({ color: channelColor(C - 1), value: o.back[v * W + (W - 1 - u)] }), borderColor);
-            }
-        };
-
         let boxMaterial = [];
         for (let i = 0; i <= 6; i++) {
             let texture;
-            if (useOverlay && i <= 5) {
-                texture = overlayTexture(i, overlay!);
-                boxMaterial.push(new THREE.MeshStandardMaterial({ map: texture }));
-                continue;
-            }
             // TODO: Break out and reuse same material for opposing sides
             switch (i) {
                 case 0:

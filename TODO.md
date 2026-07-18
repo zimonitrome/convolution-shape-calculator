@@ -20,7 +20,7 @@
 - [x]  BUG: Some parameters depend on output shape. When they are not set, things crash.
    - [x]  BUG: Extending dilated convolution too much permanently crashes app.
 - [ ]  BUG: OpenGL(?) sometimes crashes on Linux.
-- [x] Add custom input image and typical parameters for filters.
+- [ ] Add custom input image and typical parameters for filters.
 
 Maybe TODO:
 - [ ]  Make lines transparent if they are behind and object
